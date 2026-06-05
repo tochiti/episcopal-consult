@@ -52,7 +52,7 @@ export default function UserDashboard() {
           </div>
         </header>
 
-        <div className="page-section grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+        <div className="page-section grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
           <section className="surface-card self-start p-6 sm:p-8">
             <p className="eyebrow">Lookup</p>
             <h2 className="mt-3 text-2xl font-semibold text-slate-950">Find your latest record</h2>
@@ -68,6 +68,7 @@ export default function UserDashboard() {
                   className="field-input"
                 />
               </label>
+              <div className="h-1" />
               <button type="submit" disabled={loading} className="primary-button w-full">
                 {loading ? 'Searching...' : 'Check my status'}
                 {!loading ? <Search className="h-4 w-4" /> : null}
