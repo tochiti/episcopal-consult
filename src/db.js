@@ -1,16 +1,42 @@
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+  query,
+  orderBy,
+  serverTimestamp,
+  deleteDoc,
+  where,
+  limit,
+} from 'firebase/firestore';
 import { db } from './firebase';
 
 const COLLECTION_NAME = 'episcopal_consultation_registrations';
 
 export const saveRegistration = async (data) => {
   try {
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), {
+    const payload = {
       ...data,
-      status: 'Pending', // New field for the admin dashboard
-      createdAt: serverTimestamp()
+      title: data.title.trim(),
+      fullName: data.fullName.trim(),
+      position: data.position.trim(),
+      diocese: data.diocese.trim(),
+      province: data.province.trim(),
+      whatsappNumber: data.whatsappNumber.trim(),
+      emailAddress: data.emailAddress.trim(),
+      emailAddressNormalized: data.emailAddress.trim().toLowerCase(),
+      driverName: data.comingWithDriverEscort === 'Yes' ? data.driverName.trim() : '',
+      escortName: data.comingWithDriverEscort === 'Yes' ? data.escortName.trim() : '',
+      status: 'Pending',
+      createdAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), {
+      ...payload,
     });
-    return { id: docRef.id, ...data, status: 'Pending' };
+    return { id: docRef.id, ...payload };
   } catch (e) {
     console.error("Error adding document: ", e);
     throw e;
@@ -44,13 +70,26 @@ export const updateRegistrationStatus = async (id, status) => {
 
 export const getRegistrationByEmail = async (email) => {
   try {
-    const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    const registrations = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
+    const normalizedEmail = email.trim().toLowerCase();
+    const exactQuery = query(
+      collection(db, COLLECTION_NAME),
+      where('emailAddressNormalized', '==', normalizedEmail),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+    const exactSnapshot = await getDocs(exactQuery);
+    if (!exactSnapshot.empty) {
+      const match = exactSnapshot.docs[0];
+      return { id: match.id, ...match.data() };
+    }
+
+    const fallbackQuery = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(fallbackQuery);
+    const registrations = querySnapshot.docs.map((entry) => ({
+      id: entry.id,
+      ...entry.data(),
     }));
-    return registrations.find(r => r.emailAddress.toLowerCase() === email.toLowerCase());
+    return registrations.find((registration) => registration.emailAddress?.toLowerCase() === normalizedEmail);
   } catch (error) {
     console.error("Error finding registration: ", error);
     throw error;

@@ -1,326 +1,476 @@
-import React, { useEffect, useState } from 'react';
-import { getRegistrations, updateRegistrationStatus, deleteRegistration } from '../db';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
-import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell 
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
-import { 
-  Users, CheckCircle, Clock, Car, Download, LogOut, Trash2 
+import {
+  Bus,
+  CheckCircle2,
+  Download,
+  LogOut,
+  MapPinned,
+  ShieldCheck,
+  Trash2,
+  UserRoundCheck,
+  Users,
 } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import InsightCard from '../components/InsightCard';
+import StatusBadge from '../components/StatusBadge';
+import { auth } from '../firebase';
+import { deleteRegistration, getRegistrations, updateRegistrationStatus } from '../db';
+import {
+  DNDN_FACTS,
+  downloadRegistrationsCsv,
+  formatDate,
+  formatDateTime,
+  normalizeStatus,
+  summarizeRegistrations,
+} from '../lib/registrations';
 
 export default function AdminDashboard() {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [messageTone, setMessageTone] = useState('default');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
+  async function fetchData() {
     try {
       const data = await getRegistrations();
       setRegistrations(data);
     } catch (error) {
       console.error(error);
+      setMessage('Could not load registrations.');
+      setMessageTone('error');
     } finally {
       setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const analytics = useMemo(() => summarizeRegistrations(registrations), [registrations]);
+
+  const setFeedback = (copy, tone = 'default') => {
+    setMessage(copy);
+    setMessageTone(tone);
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateRegistrationStatus(id, newStatus);
-      fetchData(); // Refresh data
+      setRegistrations((current) =>
+        current.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+      );
+      setFeedback(`Registration status updated to ${newStatus}.`, 'success');
     } catch (error) {
-      alert("Error updating status");
+      console.error(error);
+      setFeedback('Could not update registration status.', 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this registration? This action cannot be undone.")) {
-      try {
-        await deleteRegistration(id);
-        fetchData(); // Refresh data
-      } catch (error) {
-        alert("Error deleting registration");
-      }
+    if (!window.confirm('Delete this registration record? This action cannot be undone.')) return;
+    try {
+      await deleteRegistration(id);
+      setRegistrations((current) => current.filter((item) => item.id !== id));
+      setFeedback('Registration deleted successfully.', 'success');
+    } catch (error) {
+      console.error(error);
+      setFeedback('Could not delete registration.', 'error');
     }
   };
 
   const handleExportCSV = () => {
-    const headers = [
-      'Title', 'Full Name', 'Position', 'Diocese', 'Province', 
-      'WhatsApp Number', 'Email Address', 'Date of Arrival', 
-      'Mode of Travel', 'Require Internal Transport', 
-      'Coming with Driver/Escort', 'Driver Name', 'Escort Name', 'Status', 'Registration Date'
-    ];
-    
-    const rows = registrations.map(r => [
-      `"${r.title || ''}"`,
-      `"${r.fullName || ''}"`,
-      `"${r.position || ''}"`,
-      `"${r.diocese || ''}"`,
-      `"${r.province || ''}"`,
-      `"${r.whatsappNumber || ''}"`,
-      `"${r.emailAddress || ''}"`,
-      `"${r.dateOfArrival || ''}"`,
-      `"${r.modeOfTravel || ''}"`,
-      `"${r.requireInternalTransport || ''}"`,
-      `"${r.comingWithDriverEscort || ''}"`,
-      `"${r.driverName || ''}"`,
-      `"${r.escortName || ''}"`,
-      `"${r.status || 'Pending'}"`,
-      `"${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : ''}"`
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(',') + "\n" 
-      + rows.map(e => e.join(',')).join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "episcopal_registrations.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadRegistrationsCsv(registrations);
+    setFeedback('CSV export started.', 'success');
   };
 
-  // Analytics Calculations
-  const totalRegs = registrations.length;
-  const approved = registrations.filter(r => r.status === 'Approved').length;
-  const pending = registrations.filter(r => r.status === 'Pending' || !r.status).length;
-  const needTransport = registrations.filter(r => r.requireInternalTransport === 'Yes').length;
-
-  const chartData = [
-    { name: 'Approved', count: approved, color: '#10B981' }, // emerald-500
-    { name: 'Pending', count: pending, color: '#F59E0B' }, // amber-500
-    { name: 'Declined', count: totalRegs - approved - pending, color: '#EF4444' } // red-500
-  ];
+  const messageClassName =
+    messageTone === 'error'
+      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      : messageTone === 'success'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+        : 'border-slate-200 bg-slate-50 text-slate-700';
 
   return (
-    <div className="flex h-screen bg-[#FDFCF0] font-sans overflow-hidden">
-      
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#2E0052] text-white flex flex-col shadow-xl hidden md:flex">
-        <div className="p-6 flex flex-col items-center border-b border-white/10">
-          <img src="/logo.png" alt="Logo" className="w-16 h-16 bg-white rounded-full p-1 mb-3" />
-          <h2 className="text-lg font-serif font-bold text-center">DNDN Admin</h2>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <a href="#" className="flex items-center gap-3 px-4 py-3 bg-white/10 text-[#DDB7FF] rounded-lg font-medium">
-            <Users className="w-5 h-5" /> Registrations
-          </a>
-        </nav>
-
-        <div className="p-4 border-t border-white/10">
-          <button 
-            onClick={() => signOut(auth)}
-            className="flex items-center gap-3 px-4 py-3 w-full text-left text-red-300 hover:bg-white/5 rounded-lg transition-colors font-medium"
-          >
-            <LogOut className="w-5 h-5" /> Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        
-        {/* Mobile Header */}
-        <header className="md:hidden bg-[#2E0052] text-white p-4 flex justify-between items-center shadow-md">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 bg-white rounded-full p-0.5" />
-            <span className="font-serif font-bold">DNDN Admin</span>
-          </div>
-          <button onClick={() => signOut(auth)} className="text-red-300"><LogOut className="w-5 h-5" /></button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="page-shell px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+      <div className="mx-auto max-w-7xl">
+        <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(135deg,rgba(33,24,47,0.98),rgba(74,49,93,0.92))] px-6 py-8 text-white shadow-[0_28px_90px_-38px_rgba(17,24,39,0.8)] sm:px-8 lg:px-10">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
-              <h1 className="text-3xl font-serif font-bold text-[#1B1C15]">Overview</h1>
-              <p className="text-gray-600">Episcopal Consultation Registration Analytics</p>
-            </div>
-            <button 
-              onClick={handleExportCSV}
-              className="bg-[#D4AF37] hover:bg-[#c5a030] text-[#2E0052] font-bold py-2.5 px-5 rounded-lg flex items-center gap-2 shadow transition-colors"
-            >
-              <Download className="w-5 h-5" /> Export to CSV
-            </button>
-          </div>
-
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-[#2E0052]">
-              <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-[#2E0052]">
-                <Users className="w-6 h-6" />
+              <div className="flex items-center gap-4">
+                <img src="/logo.png" alt="DNDN logo" className="h-16 w-16 rounded-full bg-white p-2" />
+                <div>
+                  <p className="section-label text-amber-300">Admin dashboard</p>
+                  <h1 className="mt-2 font-serif text-4xl text-white sm:text-5xl">Episcopal Consult DNDN analytics and operations.</h1>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Total Registrations</p>
-                <h3 className="text-2xl font-bold text-[#1B1C15]">{totalRegs}</h3>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-emerald-500">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Approved</p>
-                <h3 className="text-2xl font-bold text-[#1B1C15]">{approved}</h3>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-amber-500">
-              <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Pending Review</p>
-                <h3 className="text-2xl font-bold text-[#1B1C15]">{pending}</h3>
+              <p className="mt-6 max-w-3xl text-base leading-8 text-white/78">
+                Review registrations, monitor travel demand, manage status decisions, and export a clean consultation record
+                for the Diocese of Niger Delta North.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium">
+                  {registrations.length} registrations
+                </span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium">
+                  {DNDN_FACTS.cathedral}
+                </span>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-blue-500">
-              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <Car className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Need Transport</p>
-                <h3 className="text-2xl font-bold text-[#1B1C15]">{needTransport}</h3>
-              </div>
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <button onClick={handleExportCSV} className="secondary-button border-white/10 bg-white/10 text-white hover:bg-white/16">
+                <Download className="h-4 w-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={() => signOut(auth)}
+                className="secondary-button border-white/10 bg-transparent text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
             </div>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            {/* Chart */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-1">
-              <h3 className="text-lg font-serif font-bold text-[#1B1C15] mb-4">Status Breakdown</h3>
-              <div className="h-64 w-full">
+        {message ? <div className={`mt-6 rounded-2xl border p-4 text-sm ${messageClassName}`}>{message}</div> : null}
+
+        <section className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <InsightCard
+            icon={Users}
+            label="Total Registrations"
+            value={analytics.totals.total}
+            note="All submitted records"
+            accent="bg-slate-100 text-slate-700"
+          />
+          <InsightCard
+            icon={CheckCircle2}
+            label="Approved"
+            value={analytics.totals.approved}
+            note={`${analytics.totals.pending} pending review`}
+            accent="bg-emerald-100 text-emerald-700"
+          />
+          <InsightCard
+            icon={Bus}
+            label="Need Transport"
+            value={analytics.totals.transport}
+            note={`${analytics.totals.escorts} arriving with driver or escort`}
+            accent="bg-amber-100 text-amber-700"
+          />
+          <InsightCard
+            icon={ShieldCheck}
+            label="Declined"
+            value={analytics.totals.declined}
+            note="Visible in public status lookup"
+            accent="bg-rose-100 text-rose-700"
+          />
+        </section>
+
+        <section className="mt-8 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="glass-panel p-6 sm:p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="section-label">Status mix</p>
+                <h2 className="mt-3 font-serif text-3xl text-slate-950">Review outcomes</h2>
+              </div>
+              <StatusBadge status="Pending" compact />
+            </div>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <Tooltip cursor={{fill: '#f5f4e8'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                  <PieChart>
+                    <Pie
+                      data={analytics.statusChart}
+                      dataKey="count"
+                      nameKey="name"
+                      innerRadius={54}
+                      outerRadius={88}
+                      paddingAngle={3}
+                    >
+                      {analytics.statusChart.map((entry) => (
+                        <Cell key={entry.name} fill={entry.fill} />
                       ))}
-                    </Bar>
-                  </BarChart>
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-
-            {/* Empty space for future expansion, or we can stretch the table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2 overflow-hidden flex flex-col">
-              <h3 className="text-lg font-serif font-bold text-[#1B1C15] mb-4">Recent Activity</h3>
-              <div className="flex-1 overflow-y-auto pr-2">
-                {registrations.slice(0, 5).map(reg => (
-                  <div key={reg.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                    <div>
-                      <p className="font-medium text-[#1B1C15]">{reg.title} {reg.fullName}</p>
-                      <p className="text-xs text-gray-500">{reg.diocese} • {reg.createdAt?.toDate ? reg.createdAt.toDate().toLocaleDateString() : 'New'}</p>
+              <div className="space-y-3">
+                {analytics.statusChart.map((item) => (
+                  <div key={item.name} className="rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                        <p className="font-semibold text-slate-900">{item.name}</p>
+                      </div>
+                      <p className="text-2xl font-semibold text-slate-950">{item.count}</p>
                     </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      reg.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 
-                      reg.status === 'Declined' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {reg.status || 'Pending'}
-                    </span>
                   </div>
                 ))}
-                {registrations.length === 0 && !loading && (
-                  <p className="text-gray-500 text-sm">No registrations yet.</p>
-                )}
+                <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-4 text-sm leading-7 text-slate-500">
+                  Public lookup reflects these same statuses, so admin changes are visible immediately to registrants.
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <h3 className="text-lg font-serif font-bold text-[#1B1C15]">All Registrations</h3>
+          <div className="glass-panel p-6 sm:p-8">
+            <p className="section-label">Travel demand</p>
+            <h2 className="mt-3 font-serif text-3xl text-slate-950">Arrival planning and travel mode split</h2>
+            <div className="mt-6 h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.travelModes}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[16, 16, 0, 0]} fill="#c59e2b" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-[#f5f4e8] text-xs uppercase text-gray-700">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold">Name</th>
-                    <th className="px-6 py-4 font-semibold">Diocese</th>
-                    <th className="px-6 py-4 font-semibold">Contact</th>
-                    <th className="px-6 py-4 font-semibold">Travel</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {loading ? (
-                    <tr><td colSpan="6" className="text-center py-8">Loading...</td></tr>
-                  ) : registrations.length === 0 ? (
-                    <tr><td colSpan="6" className="text-center py-8">No registrations found.</td></tr>
-                  ) : (
-                    registrations.map(reg => (
-                      <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-[#1B1C15]">{reg.title} {reg.fullName}</p>
-                          <p className="text-xs text-gray-500">{reg.position}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p>{reg.diocese}</p>
-                          <p className="text-xs text-gray-500">{reg.province}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p>{reg.whatsappNumber}</p>
-                          <p className="text-xs text-gray-500">{reg.emailAddress}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p>{reg.modeOfTravel} ({new Date(reg.dateOfArrival).toLocaleDateString()})</p>
-                          {(reg.requireInternalTransport === 'Yes' || reg.comingWithDriverEscort === 'Yes') && (
-                            <div className="mt-1 flex gap-1">
-                              {reg.requireInternalTransport === 'Yes' && <span className="inline-block w-2 h-2 rounded-full bg-blue-500" title="Needs Transport"></span>}
-                              {reg.comingWithDriverEscort === 'Yes' && <span className="inline-block w-2 h-2 rounded-full bg-purple-500" title="Has Escort"></span>}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <select 
-                            value={reg.status || 'Pending'} 
-                            onChange={(e) => handleStatusChange(reg.id, e.target.value)}
-                            className={`text-xs font-semibold px-2 py-1.5 rounded outline-none border-r-4 border-transparent cursor-pointer ${
-                              reg.status === 'Approved' ? 'bg-emerald-50 text-emerald-700' : 
-                              reg.status === 'Declined' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-                            }`}
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Declined">Declined</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => handleDelete(reg.id)}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Registration"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <MiniStat label="Internal transport requests" value={analytics.totals.transport} />
+              <MiniStat label="With driver or escort" value={analytics.totals.escorts} />
             </div>
           </div>
-          
-        </div>
-      </main>
+        </section>
+
+        <section className="mt-8 grid gap-8 xl:grid-cols-[0.92fr_1.08fr]">
+          <div className="glass-panel p-6 sm:p-8">
+            <p className="section-label">Submission pulse</p>
+            <h2 className="mt-3 font-serif text-3xl text-slate-950">Arrival dates and recent activity</h2>
+
+            <div className="mt-6 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.arrivals}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" radius={[14, 14, 0, 0]} fill="#4a315d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {registrations.slice(0, 5).map((registration) => (
+                <div key={registration.id} className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-slate-100 bg-slate-50/70 p-4">
+                  <div>
+                    <p className="font-semibold text-slate-900">{registration.title} {registration.fullName}</p>
+                    <p className="text-sm text-slate-500">
+                      {registration.diocese} · {formatDateTime(registration.createdAt)}
+                    </p>
+                  </div>
+                  <StatusBadge status={registration.status} compact />
+                </div>
+              ))}
+              {!loading && registrations.length === 0 ? <p className="text-sm text-slate-500">No registrations yet.</p> : null}
+            </div>
+          </div>
+
+          <div className="glass-panel p-6 sm:p-8">
+            <p className="section-label">Top dioceses</p>
+            <h2 className="mt-3 font-serif text-3xl text-slate-950">Where registrations are coming from</h2>
+            <div className="mt-6 space-y-3">
+              {analytics.dioceses.map((item) => (
+                <div key={item.name} className="rounded-[1.5rem] border border-slate-100 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                        <MapPinned className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{item.name}</p>
+                        <p className="text-sm text-slate-500">Registrations from this diocese</p>
+                      </div>
+                    </div>
+                    <p className="text-2xl font-semibold text-slate-950">{item.count}</p>
+                  </div>
+                </div>
+              ))}
+              {!loading && analytics.dioceses.length === 0 ? <p className="text-sm text-slate-500">No diocese breakdown yet.</p> : null}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8 glass-panel overflow-hidden">
+          <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+            <div>
+              <p className="section-label">Registration records</p>
+              <h2 className="mt-3 font-serif text-3xl text-slate-950">Manage delegate entries</h2>
+            </div>
+            <p className="text-sm text-slate-500">Desktop keeps a table view; mobile uses stacked record cards.</p>
+          </div>
+
+          <div className="block lg:hidden">
+            {loading ? (
+              <div className="p-6 text-sm text-slate-500">Loading registrations...</div>
+            ) : registrations.length === 0 ? (
+              <div className="p-6 text-sm text-slate-500">No registrations found.</div>
+            ) : (
+              <div className="grid gap-4 p-4 sm:p-6">
+                {registrations.map((registration) => (
+                  <article key={registration.id} className="rounded-[1.75rem] border border-slate-100 bg-slate-50/80 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-slate-900">{registration.title} {registration.fullName}</p>
+                        <p className="mt-1 text-sm text-slate-500">{registration.position} · {registration.diocese}</p>
+                      </div>
+                      <StatusBadge status={registration.status} compact />
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <RecordDetail label="Province" value={registration.province} />
+                      <RecordDetail label="Contact" value={`${registration.whatsappNumber} · ${registration.emailAddress}`} />
+                      <RecordDetail label="Arrival" value={formatDate(registration.dateOfArrival)} />
+                      <RecordDetail label="Travel" value={registration.modeOfTravel || 'Not provided'} />
+                      <RecordDetail label="Transport" value={registration.requireInternalTransport || 'No'} />
+                      <RecordDetail label="Driver / Escort" value={registration.comingWithDriverEscort || 'No'} />
+                    </div>
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                      <select
+                        value={normalizeStatus(registration.status)}
+                        onChange={(event) => handleStatusChange(registration.id, event.target.value)}
+                        className="field-input"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Declined">Declined</option>
+                      </select>
+                      <button
+                        onClick={() => handleDelete(registration.id)}
+                        className="secondary-button border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete record
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-slate-100 bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">Delegate</th>
+                  <th className="px-6 py-4 font-semibold">Contact</th>
+                  <th className="px-6 py-4 font-semibold">Travel</th>
+                  <th className="px-6 py-4 font-semibold">Submitted</th>
+                  <th className="px-6 py-4 font-semibold">Status</th>
+                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">Loading registrations...</td>
+                  </tr>
+                ) : registrations.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">No registrations found.</td>
+                  </tr>
+                ) : (
+                  registrations.map((registration) => (
+                    <tr key={registration.id} className="border-b border-slate-100 align-top hover:bg-slate-50/70">
+                      <td className="px-6 py-5">
+                        <p className="font-semibold text-slate-900">{registration.title} {registration.fullName}</p>
+                        <p className="mt-1 text-slate-500">{registration.position}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">{registration.diocese} · {registration.province}</p>
+                      </td>
+                      <td className="px-6 py-5">
+                        <p className="font-medium text-slate-800">{registration.whatsappNumber}</p>
+                        <p className="mt-1 text-slate-500">{registration.emailAddress}</p>
+                      </td>
+                      <td className="px-6 py-5">
+                        <p className="font-medium text-slate-800">{registration.modeOfTravel || 'Not provided'}</p>
+                        <p className="mt-1 text-slate-500">Arrival: {formatDate(registration.dateOfArrival)}</p>
+                        <p className="mt-1 text-slate-500">Transport: {registration.requireInternalTransport || 'No'}</p>
+                      </td>
+                      <td className="px-6 py-5 text-slate-500">{formatDateTime(registration.createdAt)}</td>
+                      <td className="px-6 py-5">
+                        <select
+                          value={normalizeStatus(registration.status)}
+                          onChange={(event) => handleStatusChange(registration.id, event.target.value)}
+                          className="rounded-2xl border border-slate-200 bg-white px-3 py-2 font-medium text-slate-700 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Approved">Approved</option>
+                          <option value="Declined">Declined</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => handleDelete(registration.id)}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 font-medium text-rose-700 transition hover:bg-rose-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mt-8 glass-panel p-6 sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+              <UserRoundCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="section-label">Context</p>
+              <h2 className="mt-2 font-serif text-3xl text-slate-950">{DNDN_FACTS.name}</h2>
+            </div>
+          </div>
+          <p className="mt-4 max-w-4xl text-sm leading-8 text-slate-600">
+            This dashboard is tailored to support episcopal consultation operations for the diocese within the Niger Delta
+            Province. Exported records, public lookup states, and transport planning metrics all read from the same
+            registration data set.
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-4">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function RecordDetail({ label, value }) {
+  return (
+    <div className="rounded-[1.25rem] border border-slate-100 bg-white/80 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-medium text-slate-900">{value}</p>
     </div>
   );
 }

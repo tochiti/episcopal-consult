@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { LockKeyhole, Shield } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { auth } from '../firebase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,83 +11,82 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/admin');
-    } catch (err) {
+    } catch (loginError) {
+      console.error(loginError);
       setError('Invalid email or password.');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCF0] flex flex-col justify-center font-sans">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
-        <img src="/logo.png" alt="DNDN Logo" className="mx-auto h-20 w-auto bg-white rounded-full p-1 shadow-sm mb-6" />
-        <h2 className="text-center text-3xl font-serif font-bold text-[#1B1C15]">
-          Admin Portal
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to access the episcopal dashboard
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-6">
-        <div className="bg-white py-8 px-4 sm:px-10 shadow-xl rounded-2xl border border-gray-100 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-[#2E0052]"></div>
-          
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
+    <div className="page-shell flex items-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(135deg,rgba(33,24,47,0.98),rgba(74,49,93,0.92))] p-8 text-white shadow-[0_28px_90px_-38px_rgba(17,24,39,0.8)] sm:p-10">
+          <img src="/logo.png" alt="DNDN logo" className="h-[4.5rem] w-[4.5rem] rounded-full bg-white p-2 shadow-lg" />
+          <p className="section-label mt-6 text-amber-300">Admin portal</p>
+          <h1 className="mt-3 font-serif text-4xl text-white sm:text-5xl">Manage consultation registrations and analytics.</h1>
+          <p className="mt-5 text-base leading-8 text-white/78">
+            Sign in with the configured admin credentials to review delegates, update statuses, export records, and remove
+            registration entries when needed.
+          </p>
+          <div className="mt-8 rounded-[1.75rem] border border-white/15 bg-white/10 p-5 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <Shield className="h-5 w-5 text-amber-300" />
+              <p className="font-semibold">Admin-only access</p>
             </div>
-          )}
+            <p className="mt-3 text-sm leading-7 text-white/72">
+              This page protects the registration records stored for Episcopal Consult DNDN and routes approved users into the
+              full dashboard.
+            </p>
+          </div>
+        </section>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <input 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                required 
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2E0052] focus:border-transparent outline-none transition-all"
+        <section className="glass-panel p-6 sm:p-8 lg:p-10">
+          <h2 className="font-serif text-3xl text-slate-950">Admin sign in</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-500">Use your Firebase-authenticated admin account to continue.</p>
+
+          {error ? <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div> : null}
+
+          <form onSubmit={handleLogin} className="mt-8 space-y-5">
+            <label>
+              <span className="field-label">Email Address</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
                 placeholder="admin@example.com"
+                className="field-input"
               />
-            </div>
+            </label>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2E0052] focus:border-transparent outline-none transition-all"
+            <label>
+              <span className="field-label">Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
                 placeholder="••••••••"
+                className="field-input"
               />
-            </div>
+            </label>
 
-            <button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full bg-[#2E0052] hover:bg-[#4b0082] text-white font-bold py-3 px-4 rounded-lg shadow transition-colors flex justify-center items-center gap-2 disabled:opacity-70"
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-              {!isLoading && <Lock className="w-4 h-4" />}
+            <button type="submit" disabled={isLoading} className="primary-button w-full">
+              {isLoading ? 'Signing in...' : 'Sign in to dashboard'}
+              {!isLoading ? <LockKeyhole className="h-4 w-4" /> : null}
             </button>
           </form>
-        </div>
+        </section>
       </div>
     </div>
   );
