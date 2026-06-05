@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { LockKeyhole } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,82 +11,76 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     setError('');
-    
     try {
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/admin');
-    } catch (err) {
+    } catch (loginError) {
+      console.error(loginError);
       setError('Invalid email or password.');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCF0] flex flex-col justify-center font-sans">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
-        <img src="/logo.png" alt="DNDN Logo" className="mx-auto h-20 w-auto bg-white rounded-full p-1 shadow-sm mb-6" />
-        <h2 className="text-center text-3xl font-serif font-bold text-[#1B1C15]">
-          Admin Portal
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to access the episcopal dashboard
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-6">
-        <div className="bg-white py-8 px-4 sm:px-10 shadow-xl rounded-2xl border border-gray-100 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-[#2E0052]"></div>
-          
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+    <div className="page-shell flex items-center py-6 sm:py-8 lg:py-10">
+      <div className="shell-container max-w-5xl">
+        <div className="grid gap-8 lg:grid-cols-[0.88fr_1.12fr]">
+          <section className="surface-soft p-8 lg:p-10">
+            <p className="eyebrow">Admin access</p>
+            <h1 className="mt-3 font-serif text-5xl leading-none text-slate-950">Operational access for the consultation team.</h1>
+            <p className="mt-4 text-sm leading-8 text-slate-600">
+              Sign in to review registrations, update approval status, monitor analytics, and export records.
+            </p>
+            <div className="mt-8 flex items-center gap-3">
+              <img src="/logo.png" alt="DNDN logo" className="h-12 w-12 rounded-full bg-white p-1.5 shadow-sm" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Episcopal Consult DNDN</p>
+                <p className="text-sm text-slate-500">Admin dashboard</p>
               </div>
             </div>
-          )}
+          </section>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <input 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                required 
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2E0052] focus:border-transparent outline-none transition-all"
-                placeholder="admin@example.com"
-              />
-            </div>
+          <section className="surface-card p-6 sm:p-8 lg:p-10">
+            <Link to="/" className="ghost-link">Back to homepage</Link>
+            <h2 className="mt-6 text-3xl font-semibold text-slate-950">Sign in</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">Use your Firebase-authenticated admin credentials.</p>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2E0052] focus:border-transparent outline-none transition-all"
-                placeholder="••••••••"
-              />
-            </div>
+            {error ? <div className="mt-6 rounded-[1.25rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div> : null}
 
-            <button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full bg-[#2E0052] hover:bg-[#4b0082] text-white font-bold py-3 px-4 rounded-lg shadow transition-colors flex justify-center items-center gap-2 disabled:opacity-70"
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-              {!isLoading && <Lock className="w-4 h-4" />}
-            </button>
-          </form>
+            <form onSubmit={handleLogin} className="mt-8 space-y-5">
+              <label>
+                <span className="field-label">Email Address</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  placeholder="admin@example.com"
+                  className="field-input"
+                />
+              </label>
+              <label>
+                <span className="field-label">Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="field-input"
+                />
+              </label>
+              <button type="submit" disabled={isLoading} className="primary-button w-full">
+                {isLoading ? 'Signing in...' : 'Sign in to dashboard'}
+                {!isLoading ? <LockKeyhole className="h-4 w-4" /> : null}
+              </button>
+            </form>
+          </section>
         </div>
       </div>
     </div>
