@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarRange, CheckCircle2, ClipboardList, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DNDN_FACTS } from '../lib/registrations';
+import PublicFooter from '../components/PublicFooter';
 
 const steps = [
   {
@@ -26,7 +27,7 @@ export default function LandingPage() {
       <div className="shell-container">
         <header className="flex items-center justify-between gap-4 py-2">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="DNDN logo" className="h-11 w-11 rounded-full bg-white p-1.5 shadow-sm" />
+            <img src="/logo.png" alt="DNDN logo" className="brand-logo" />
             <div>
               <p className="eyebrow">Episcopal Consult</p>
               <p className="text-sm font-semibold text-slate-900">Registration Portal</p>
@@ -47,8 +48,7 @@ export default function LandingPage() {
                   A cleaner way to coordinate registration for a high-trust gathering.
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                  This portal supports Episcopal Consultation registration for delegates connected with {DNDN_FACTS.name}.
-                  Register quickly, submit arrival details cleanly, and check your status later without unnecessary friction.
+                  Registration for delegates connected with {DNDN_FACTS.name}. Submit your details and check your status later.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <Link to="/register" className="primary-button">
@@ -66,9 +66,6 @@ export default function LandingPage() {
                   <p className="eyebrow">For delegates</p>
                   <p className="mt-3 text-2xl font-semibold leading-tight text-slate-950">
                     One focused form. One review flow. One place to check progress.
-                  </p>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">
-                    Designed to keep registration clear, fast, and consistent across attendance, travel planning, and follow-up.
                   </p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -89,7 +86,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section className="mt-8 grid gap-4 lg:grid-cols-3">
+          <section className="page-section grid gap-4 lg:grid-cols-3">
             {steps.map(({ icon: Icon, title, copy }) => (
               <article key={title} className="surface-soft p-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
@@ -101,14 +98,10 @@ export default function LandingPage() {
             ))}
           </section>
 
-          <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_0.95fr]">
+          <section className="page-section grid gap-8 lg:grid-cols-[1fr_0.95fr]">
             <div className="surface-soft p-6 sm:p-8">
-              <p className="eyebrow">What happens on the form</p>
-              <h2 className="mt-4 font-serif text-4xl text-slate-950">Registration is separated from browsing on purpose.</h2>
-              <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-600">
-                Instead of putting a long form on the homepage, the experience now starts with a clear landing page and routes
-                users into a focused registration task. That keeps the public face clean while preserving the same backend-compatible flow.
-              </p>
+              <p className="eyebrow">On the form</p>
+              <h2 className="mt-4 font-serif text-4xl text-slate-950">What you will provide</h2>
               <div className="mt-6 flex flex-wrap gap-3">
                 <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
                   Delegate details
@@ -124,16 +117,12 @@ export default function LandingPage() {
 
             <div className="surface-card overflow-hidden p-6 sm:p-8">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-600 text-white">
+                <div className="icon-chip bg-teal-600 text-white">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="eyebrow">Status access</p>
                   <h2 className="mt-4 font-serif text-3xl text-slate-950">Already submitted your registration?</h2>
-                  <p className="mt-4 text-sm leading-8 text-slate-600">
-                    The public dashboard remains available for registrants who want to check approval status, travel review progress,
-                    or whether their details have already been recorded.
-                  </p>
                   <div className="mt-6">
                     <Link to="/dashboard" className="primary-button">
                       Open status dashboard
@@ -146,6 +135,7 @@ export default function LandingPage() {
           </section>
         </main>
       </div>
+      <PublicFooter />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, Search, ShieldCheck, TicketCheck } from 'lucide-react';
+import { ArrowLeft, Search, TicketCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getRegistrationByEmail } from '../db';
+import PublicFooter from '../components/PublicFooter';
 import StatusBadge from '../components/StatusBadge';
 import { formatDate, formatDateTime, normalizeStatus } from '../lib/registrations';
 
@@ -35,7 +36,7 @@ export default function UserDashboard() {
   return (
     <div className="page-shell py-6 sm:py-8 lg:py-10">
       <div className="shell-container max-w-6xl">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link to="/" className="ghost-link">
               <ArrowLeft className="h-4 w-4" />
@@ -43,19 +44,16 @@ export default function UserDashboard() {
             </Link>
             <p className="eyebrow mt-6">Status dashboard</p>
             <h1 className="mt-3 font-serif text-5xl leading-none text-slate-950 sm:text-6xl">Check your registration status.</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-600 sm:text-base">
-              Enter the same email address you used during registration to view the latest record and current review state.
-            </p>
+            <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-600 sm:text-base">Use the same email address from registration.</p>
           </div>
           <div className="surface-soft p-4 sm:max-w-xs">
-            <p className="text-sm font-semibold text-slate-900">Need to register instead?</p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">Use the dedicated registration page for new submissions.</p>
+            <p className="text-sm font-semibold text-slate-900">New registration?</p>
             <Link to="/register" className="ghost-link mt-3">Open registration form</Link>
           </div>
         </header>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
-          <section className="surface-card p-6 sm:p-8">
+        <div className="page-section grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+          <section className="surface-card self-start p-6 sm:p-8">
             <p className="eyebrow">Lookup</p>
             <h2 className="mt-3 text-2xl font-semibold text-slate-950">Find your latest record</h2>
             <form onSubmit={handleSearch} className="mt-6 space-y-4">
@@ -78,23 +76,13 @@ export default function UserDashboard() {
 
             {error ? <div className="mt-4 rounded-[1.25rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div> : null}
 
-            <div className="mt-6 surface-soft p-5">
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 text-teal-600" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">What you will see</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Status, submitted date, arrival information, contact details, and any transport or escort information already on file.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <div className="mt-6 text-sm text-slate-500">Search with the same email used for registration.</div>
           </section>
 
-          <section className="surface-card p-6 sm:p-8">
+          <section className="surface-card flex min-h-[28rem] items-stretch p-6 sm:p-8">
             {!searched ? (
-              <div className="flex min-h-[24rem] flex-col items-center justify-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-white">
+              <div className="flex w-full flex-col items-center justify-center text-center">
+                <div className="icon-chip h-16 w-16 rounded-full bg-slate-950 text-white">
                   <TicketCheck className="h-7 w-7" />
                 </div>
                 <h3 className="mt-6 font-serif text-4xl text-slate-950">Awaiting lookup</h3>
@@ -103,7 +91,7 @@ export default function UserDashboard() {
                 </p>
               </div>
             ) : result ? (
-              <div>
+              <div className="w-full">
                 <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="eyebrow">Latest registration</p>
@@ -134,20 +122,19 @@ export default function UserDashboard() {
                 ) : null}
               </div>
             ) : (
-              <div className="flex min-h-[24rem] flex-col items-center justify-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+              <div className="flex w-full flex-col items-center justify-center text-center">
+                <div className="icon-chip h-16 w-16 rounded-full bg-orange-100 text-orange-600">
                   <Search className="h-7 w-7" />
                 </div>
                 <h3 className="mt-6 font-serif text-4xl text-slate-950">No record found</h3>
-                <p className="mt-3 max-w-md text-sm leading-7 text-slate-500">
-                  We could not match that email to a submitted registration. Check for typos or return to the registration page.
-                </p>
+                <p className="mt-3 max-w-md text-sm leading-7 text-slate-500">Check for typos or return to registration.</p>
                 <Link to="/register" className="secondary-button mt-6">Go to registration</Link>
               </div>
             )}
           </section>
         </div>
       </div>
+      <PublicFooter />
     </div>
   );
 }

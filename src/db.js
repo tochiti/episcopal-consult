@@ -71,16 +71,25 @@ export const updateRegistrationStatus = async (id, status) => {
 export const getRegistrationByEmail = async (email) => {
   try {
     const normalizedEmail = email.trim().toLowerCase();
-    const exactQuery = query(
-      collection(db, COLLECTION_NAME),
-      where('emailAddressNormalized', '==', normalizedEmail),
-      orderBy('createdAt', 'desc'),
-      limit(1)
-    );
-    const exactSnapshot = await getDocs(exactQuery);
-    if (!exactSnapshot.empty) {
-      const match = exactSnapshot.docs[0];
-      return { id: match.id, ...match.data() };
+    try {
+      const exactQuery = query(
+        collection(db, COLLECTION_NAME),
+        where('emailAddressNormalized', '==', normalizedEmail),
+        limit(10)
+      );
+      const exactSnapshot = await getDocs(exactQuery);
+      if (!exactSnapshot.empty) {
+        const matches = exactSnapshot.docs
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .sort((a, b) => {
+            const left = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+            const right = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+            return right - left;
+          });
+        return matches[0];
+      }
+    } catch (indexedLookupError) {
+      console.warn('Indexed email lookup failed, falling back to scan.', indexedLookupError);
     }
 
     const fallbackQuery = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));

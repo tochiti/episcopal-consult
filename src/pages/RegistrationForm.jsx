@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { saveRegistration } from '../db';
-import { DNDN_FACTS } from '../lib/registrations';
+import PublicFooter from '../components/PublicFooter';
 
 const initialForm = {
   title: '',
@@ -128,11 +128,11 @@ export default function RegistrationForm() {
               <ul className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
                 <li>Use the same email address on the status dashboard later.</li>
                 <li>Travel details can affect transport planning and host coordination.</li>
-                <li>The diocese remains associated with {DNDN_FACTS.cathedral} and {DNDN_FACTS.bishop}.</li>
               </ul>
             </aside>
           </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
@@ -162,7 +162,7 @@ export default function RegistrationForm() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_0.34fr]">
+        <div className="page-section grid gap-8 lg:grid-cols-[1fr_0.34fr]">
           <main className="surface-card p-6 sm:p-8 lg:p-10">
             {error ? (
               <div className="mb-6 rounded-[1.25rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div>
@@ -289,6 +289,7 @@ export default function RegistrationForm() {
           </aside>
         </div>
       </div>
+      <PublicFooter />
     </div>
   );
 }
