@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { saveRegistration } from '../db';
 import PublicFooter from '../components/PublicFooter';
+import { DIOCESE_OPTIONS, PROVINCE_OPTIONS, TITLE_OPTIONS } from '../lib/registrationOptions';
 
 const initialForm = {
   title: '',
@@ -50,11 +51,8 @@ const labels = {
 };
 
 const placeholders = {
-  title: 'Ven., Rt. Rev., Canon...',
   fullName: 'Delegate full name',
   position: 'Office or role',
-  diocese: 'Diocese name',
-  province: 'Province',
   whatsappNumber: '+234...',
   emailAddress: 'name@example.com',
 };
@@ -107,11 +105,45 @@ export default function RegistrationForm() {
                 <CheckCircle2 className="h-4 w-4" />
                 Registration submitted
               </div>
-              <h1 className="mt-6 font-serif text-5xl leading-none text-slate-950">You’re in the queue.</h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
-                Your registration has been received and is now available to the consultation host team for review. Your current
-                public status will show as <strong className="text-slate-950">Pending</strong> until it is updated.
-              </p>
+              <div className="mt-6 space-y-5 text-base leading-8 text-slate-600">
+                <h1 className="font-serif text-5xl leading-none text-slate-950">Thank you for your registration.</h1>
+                <p>Your Grace / Your Lordship,</p>
+                <p>
+                  Thank you so much for taking the time to share your details for the Church of Nigeria Episcopal Consultation. We
+                  truly appreciate your quick response and cooperation. Your information has been received with gratitude and will
+                  help us a lot as we prepare for the Consultation.
+                </p>
+                <p>
+                  We will share more details soon about accreditation, accommodation, transportation, protocol arrangements, and
+                  other logistics.
+                </p>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Need help?</p>
+                  <div className="mt-4 space-y-4">
+                    <ContactLine
+                      name="Rev. Canon Gideon Genka"
+                      phoneDisplay="08060821822"
+                      phoneHref="08060821822"
+                      whatsappHref="2348060821822"
+                    />
+                    <ContactLine
+                      name="Engr. Edwin Amadi"
+                      phoneDisplay="08036716352"
+                      phoneHref="08036716352"
+                      whatsappHref="2348036716352"
+                    />
+                  </div>
+                </div>
+                <p>
+                  We&apos;re excited to welcome Your Grace/Your Lordship to the Diocese of Niger Delta North. May the Lord continue
+                  to strengthen and bless your ministry.
+                </p>
+                <div>
+                  <p>Warmest regards,</p>
+                  <p className="mt-2 font-medium text-slate-950">Episcopal Consultation Planning Committee</p>
+                  <p>Diocese of Niger Delta North (DNDN)</p>
+                </div>
+              </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to="/dashboard" className="primary-button">
                   Check status
@@ -124,10 +156,11 @@ export default function RegistrationForm() {
             </section>
 
             <aside className="surface-soft p-6">
-              <p className="eyebrow">Keep in mind</p>
+              <p className="eyebrow">Next steps</p>
               <ul className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
                 <li>Use the same email address on the status dashboard later.</li>
-                <li>Travel details can affect transport planning and host coordination.</li>
+                <li>Your public registration status will remain pending until the host team updates it.</li>
+                <li>Keep your travel details accurate so transport and protocol planning stays aligned.</li>
               </ul>
             </aside>
           </div>
@@ -179,6 +212,39 @@ export default function RegistrationForm() {
                   <div className="grid gap-5 sm:grid-cols-2">
                     {section.fields.map((field) => {
                       const fullWidth = field === 'province';
+
+                      if (field === 'title') {
+                        return (
+                          <label key={field}>
+                            <span className="field-label">{labels[field]}</span>
+                            <select name={field} required value={formData[field]} onChange={handleChange} className="field-input">
+                              <option value="">Select title</option>
+                              {TITLE_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        );
+                      }
+
+                      if (field === 'diocese' || field === 'province') {
+                        const options = field === 'diocese' ? DIOCESE_OPTIONS : PROVINCE_OPTIONS;
+                        return (
+                          <label key={field} className={fullWidth ? 'sm:col-span-2' : ''}>
+                            <span className="field-label">{labels[field]}</span>
+                            <select name={field} required value={formData[field]} onChange={handleChange} className="field-input">
+                              <option value="">{field === 'diocese' ? 'Select diocese' : 'Select province'}</option>
+                              {options.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        );
+                      }
 
                       if (field === 'modeOfTravel') {
                         return (
@@ -290,6 +356,23 @@ export default function RegistrationForm() {
         </div>
       </div>
       <PublicFooter />
+    </div>
+  );
+}
+
+function ContactLine({ name, phoneDisplay, phoneHref, whatsappHref }) {
+  return (
+    <div>
+      <p className="font-semibold text-slate-950">{name}</p>
+      <p className="mt-1 text-sm text-slate-600">{phoneDisplay}</p>
+      <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
+        <a href={`tel:${phoneHref}`} className="ghost-link">
+          Call
+        </a>
+        <a href={`https://wa.me/${whatsappHref}`} target="_blank" rel="noreferrer" className="ghost-link">
+          WhatsApp
+        </a>
+      </div>
     </div>
   );
 }

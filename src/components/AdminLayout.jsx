@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Download, LayoutGrid, LogOut, Settings } from 'lucide-react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { deleteRegistration, getRegistrations, updateRegistrationStatus } from '../db';
@@ -18,6 +18,7 @@ export default function AdminLayout() {
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState('default');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     let active = true;
@@ -69,6 +70,9 @@ export default function AdminLayout() {
       await deleteRegistration(id);
       setRegistrations((current) => current.filter((item) => item.id !== id));
       setFeedback('Registration deleted successfully.', 'success');
+      if (location.pathname.includes(`/admin/registrations/${id}`)) {
+        navigate('/admin/registrations');
+      }
     } catch (error) {
       console.error(error);
       setFeedback('Could not delete registration.', 'error');
@@ -142,6 +146,7 @@ export default function AdminLayout() {
                 registrations,
                 loading,
                 analytics,
+                location,
                 handleDelete,
                 handleExportCSV,
                 handleSignOut,

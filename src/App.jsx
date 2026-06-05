@@ -9,6 +9,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
 const AdminRegistrations = lazy(() => import('./pages/admin/AdminRegistrations'));
+const AdminRegistrationDetail = lazy(() => import('./pages/admin/AdminRegistrationDetail'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const Login = lazy(() => import('./pages/Login'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard'));
@@ -65,6 +66,7 @@ function App() {
           >
             <Route index element={<AdminOverview />} />
             <Route path="registrations" element={<AdminRegistrations />} />
+            <Route path="registrations/:registrationId" element={<AdminRegistrationDetail />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>
