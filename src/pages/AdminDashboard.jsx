@@ -1,341 +1,326 @@
 import React, { useEffect, useState } from 'react';
-import { getRegistrations, updateRegistrationStatus } from '../db';
+import { getRegistrations, updateRegistrationStatus, deleteRegistration } from '../db';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell 
+} from 'recharts';
+import { 
+  Users, CheckCircle, Clock, Car, Download, LogOut, Trash2 
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const [registrations, setRegistrations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All'); // All, Pending, Approved, Declined
-  
-  // Modal state
-  const [selectedReg, setSelectedReg] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    fetchData();
   }, []);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const fetchData = async () => {
+    setLoading(true);
     try {
       const data = await getRegistrations();
       setRegistrations(data);
     } catch (error) {
-      console.error("Failed to fetch registrations", error);
+      console.error(error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateRegistrationStatus(id, newStatus);
-      // Optimistically update UI
-      setRegistrations(prev => 
-        prev.map(reg => reg.id === id ? { ...reg, status: newStatus } : reg)
-      );
-      if (selectedReg && selectedReg.id === id) {
-        setSelectedReg({ ...selectedReg, status: newStatus });
-      }
+      fetchData(); // Refresh data
     } catch (error) {
-      alert("Failed to update status. Please try again.");
+      alert("Error updating status");
     }
   };
 
-  const exportToCSV = () => {
-    if (registrations.length === 0) return;
-    
-    // Headers matching our data keys
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this registration? This action cannot be undone.")) {
+      try {
+        await deleteRegistration(id);
+        fetchData(); // Refresh data
+      } catch (error) {
+        alert("Error deleting registration");
+      }
+    }
+  };
+
+  const handleExportCSV = () => {
     const headers = [
-      "ID", "Date Submitted", "Status", "Title", "Full Name", "Position", "Diocese", "Province", 
-      "WhatsApp Number", "Email Address", "Date of Arrival", "Mode of Travel", 
-      "Require Internal Transport", "Coming with Driver/Escort", "Driver Name", "Escort Name"
+      'Title', 'Full Name', 'Position', 'Diocese', 'Province', 
+      'WhatsApp Number', 'Email Address', 'Date of Arrival', 
+      'Mode of Travel', 'Require Internal Transport', 
+      'Coming with Driver/Escort', 'Driver Name', 'Escort Name', 'Status', 'Registration Date'
     ];
+    
+    const rows = registrations.map(r => [
+      `"${r.title || ''}"`,
+      `"${r.fullName || ''}"`,
+      `"${r.position || ''}"`,
+      `"${r.diocese || ''}"`,
+      `"${r.province || ''}"`,
+      `"${r.whatsappNumber || ''}"`,
+      `"${r.emailAddress || ''}"`,
+      `"${r.dateOfArrival || ''}"`,
+      `"${r.modeOfTravel || ''}"`,
+      `"${r.requireInternalTransport || ''}"`,
+      `"${r.comingWithDriverEscort || ''}"`,
+      `"${r.driverName || ''}"`,
+      `"${r.escortName || ''}"`,
+      `"${r.status || 'Pending'}"`,
+      `"${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : ''}"`
+    ]);
 
-    // CSV rows
-    const csvRows = [
-      headers.join(','),
-      ...registrations.map(r => [
-        r.id,
-        r.createdAt ? new Date(r.createdAt.toDate ? r.createdAt.toDate() : r.createdAt).toLocaleString() : '',
-        r.status || 'Pending',
-        `"${r.title || ''}"`,
-        `"${r.fullName || ''}"`,
-        `"${r.position || ''}"`,
-        `"${r.diocese || ''}"`,
-        `"${r.province || ''}"`,
-        `"${r.whatsappNumber || ''}"`,
-        `"${r.emailAddress || ''}"`,
-        `"${r.dateOfArrival || ''}"`,
-        `"${r.modeOfTravel || ''}"`,
-        `"${r.requireInternalTransport || ''}"`,
-        `"${r.comingWithDriverEscort || ''}"`,
-        `"${r.driverName || ''}"`,
-        `"${r.escortName || ''}"`
-      ].join(','))
-    ].join('\n');
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(',') + "\n" 
+      + rows.map(e => e.join(',')).join('\n');
 
-    // Trigger download
-    const blob = new Blob([csvRows], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "registrations_export.csv");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "episcopal_registrations.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const filteredRegistrations = registrations.filter(reg => {
-    const matchesSearch = 
-      (reg.fullName && reg.fullName.toLowerCase().includes(search.toLowerCase())) || 
-      (reg.diocese && reg.diocese.toLowerCase().includes(search.toLowerCase())) ||
-      (reg.position && reg.position.toLowerCase().includes(search.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'All' || reg.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  // Stats
-  const total = registrations.length;
-  const pending = registrations.filter(r => r.status === 'Pending').length;
+  // Analytics Calculations
+  const totalRegs = registrations.length;
   const approved = registrations.filter(r => r.status === 'Approved').length;
+  const pending = registrations.filter(r => r.status === 'Pending' || !r.status).length;
+  const needTransport = registrations.filter(r => r.requireInternalTransport === 'Yes').length;
+
+  const chartData = [
+    { name: 'Approved', count: approved, color: '#10B981' }, // emerald-500
+    { name: 'Pending', count: pending, color: '#F59E0B' }, // amber-500
+    { name: 'Declined', count: totalRegs - approved - pending, color: '#EF4444' } // red-500
+  ];
 
   return (
-    <div className="container" style={{ maxWidth: '1400px', display: 'flex', gap: '2rem' }}>
+    <div className="flex h-screen bg-[#FDFCF0] font-sans overflow-hidden">
       
-      {/* Sidebar Layout */}
-      <div style={{ width: '250px', flexShrink: 0 }}>
-        <div className="card" style={{ padding: '1.5rem', position: 'sticky', top: '100px' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Filters</h3>
-          
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label>Search</label>
-            <input 
-              type="text" 
-              placeholder="Name, diocese..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}
-            />
-          </div>
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#2E0052] text-white flex flex-col shadow-xl hidden md:flex">
+        <div className="p-6 flex flex-col items-center border-b border-white/10">
+          <img src="/logo.png" alt="Logo" className="w-16 h-16 bg-white rounded-full p-1 mb-3" />
+          <h2 className="text-lg font-serif font-bold text-center">DNDN Admin</h2>
+        </div>
+        
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          <a href="#" className="flex items-center gap-3 px-4 py-3 bg-white/10 text-[#DDB7FF] rounded-lg font-medium">
+            <Users className="w-5 h-5" /> Registrations
+          </a>
+        </nav>
 
-          <div className="form-group">
-            <label>Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="All">All Registrations</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Declined">Declined</option>
-            </select>
-          </div>
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1.5rem 0' }} />
-
-          <button className="btn btn-secondary" onClick={exportToCSV} style={{ width: '100%', marginBottom: '1rem' }}>
-            Export to CSV
-          </button>
-          
-          <button className="btn btn-primary" onClick={loadData} style={{ width: '100%', background: '#F3F4F6', color: 'var(--text-main)', border: '1px solid var(--border)', boxShadow: 'none' }}>
-            Refresh Data
+        <div className="p-4 border-t border-white/10">
+          <button 
+            onClick={() => signOut(auth)}
+            className="flex items-center gap-3 px-4 py-3 w-full text-left text-red-300 hover:bg-white/5 rounded-lg transition-colors font-medium"
+          >
+            <LogOut className="w-5 h-5" /> Sign Out
           </button>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <div style={{ flex: 1 }}>
+      <main className="flex-1 flex flex-col h-full overflow-hidden">
         
-        {/* Stats Row */}
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '2rem', gap: '1.5rem' }}>
-          <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid var(--primary)' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Total</div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-main)' }}>{total}</div>
+        {/* Mobile Header */}
+        <header className="md:hidden bg-[#2E0052] text-white p-4 flex justify-between items-center shadow-md">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 bg-white rounded-full p-0.5" />
+            <span className="font-serif font-bold">DNDN Admin</span>
           </div>
-          <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #F59E0B' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Pending</div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#F59E0B' }}>{pending}</div>
-          </div>
-          <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #10B981' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Approved</div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#10B981' }}>{approved}</div>
-          </div>
-        </div>
+          <button onClick={() => signOut(auth)} className="text-red-300"><LogOut className="w-5 h-5" /></button>
+        </header>
 
-        {/* Table Card */}
-        <div className="card" style={{ padding: '0' }}>
-          {isLoading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Loading registrations...
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+              <h1 className="text-3xl font-serif font-bold text-[#1B1C15]">Overview</h1>
+              <p className="text-gray-600">Episcopal Consultation Registration Analytics</p>
             </div>
-          ) : filteredRegistrations.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No registrations found matching your filters.
+            <button 
+              onClick={handleExportCSV}
+              className="bg-[#D4AF37] hover:bg-[#c5a030] text-[#2E0052] font-bold py-2.5 px-5 rounded-lg flex items-center gap-2 shadow transition-colors"
+            >
+              <Download className="w-5 h-5" /> Export to CSV
+            </button>
+          </div>
+
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-[#2E0052]">
+              <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-[#2E0052]">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Total Registrations</p>
+                <h3 className="text-2xl font-bold text-[#1B1C15]">{totalRegs}</h3>
+              </div>
             </div>
-          ) : (
-            <div className="table-container" style={{ border: 'none', borderRadius: 'var(--radius-xl)' }}>
-              <table>
-                <thead>
+            
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-emerald-500">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Approved</p>
+                <h3 className="text-2xl font-bold text-[#1B1C15]">{approved}</h3>
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-amber-500">
+              <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Pending Review</p>
+                <h3 className="text-2xl font-bold text-[#1B1C15]">{pending}</h3>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 border-l-4 border-l-blue-500">
+              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <Car className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Need Transport</p>
+                <h3 className="text-2xl font-bold text-[#1B1C15]">{needTransport}</h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            {/* Chart */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-1">
+              <h3 className="text-lg font-serif font-bold text-[#1B1C15] mb-4">Status Breakdown</h3>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{fill: '#f5f4e8'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Empty space for future expansion, or we can stretch the table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2 overflow-hidden flex flex-col">
+              <h3 className="text-lg font-serif font-bold text-[#1B1C15] mb-4">Recent Activity</h3>
+              <div className="flex-1 overflow-y-auto pr-2">
+                {registrations.slice(0, 5).map(reg => (
+                  <div key={reg.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                    <div>
+                      <p className="font-medium text-[#1B1C15]">{reg.title} {reg.fullName}</p>
+                      <p className="text-xs text-gray-500">{reg.diocese} • {reg.createdAt?.toDate ? reg.createdAt.toDate().toLocaleDateString() : 'New'}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      reg.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 
+                      reg.status === 'Declined' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {reg.status || 'Pending'}
+                    </span>
+                  </div>
+                ))}
+                {registrations.length === 0 && !loading && (
+                  <p className="text-gray-500 text-sm">No registrations yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-serif font-bold text-[#1B1C15]">All Registrations</h3>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-[#f5f4e8] text-xs uppercase text-gray-700">
                   <tr>
-                    <th>Status</th>
-                    <th>Name & Info</th>
-                    <th>Contact</th>
-                    <th>Arrival</th>
-                    <th>Actions</th>
+                    <th className="px-6 py-4 font-semibold">Name</th>
+                    <th className="px-6 py-4 font-semibold">Diocese</th>
+                    <th className="px-6 py-4 font-semibold">Contact</th>
+                    <th className="px-6 py-4 font-semibold">Travel</th>
+                    <th className="px-6 py-4 font-semibold">Status</th>
+                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredRegistrations.map((reg) => (
-                    <tr key={reg.id} className="fade-in">
-                      <td>
-                        <select 
-                          value={reg.status || 'Pending'} 
-                          onChange={(e) => handleStatusChange(reg.id, e.target.value)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '9999px',
-                            border: '1px solid transparent',
-                            fontWeight: 600,
-                            fontSize: '0.85rem',
-                            backgroundColor: reg.status === 'Approved' ? '#D1FAE5' : reg.status === 'Declined' ? '#FEE2E2' : '#FEF3C7',
-                            color: reg.status === 'Approved' ? '#065F46' : reg.status === 'Declined' ? '#991B1B' : '#92400E',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Declined">Declined</option>
-                        </select>
-                      </td>
-                      <td>
-                        <strong>{reg.title} {reg.fullName}</strong><br/>
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{reg.position} • {reg.diocese}</span>
-                      </td>
-                      <td>
-                        <a href={`mailto:${reg.emailAddress}`} style={{ color: 'var(--primary)', textDecoration: 'none' }}>{reg.emailAddress}</a><br/>
-                        <span style={{ fontSize: '0.9rem' }}>{reg.whatsappNumber}</span>
-                      </td>
-                      <td>
-                        {new Date(reg.dateOfArrival).toLocaleDateString()}
-                      </td>
-                      <td>
-                        <button 
-                          className="btn btn-secondary" 
-                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                          onClick={() => setSelectedReg(reg)}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-gray-100">
+                  {loading ? (
+                    <tr><td colSpan="6" className="text-center py-8">Loading...</td></tr>
+                  ) : registrations.length === 0 ? (
+                    <tr><td colSpan="6" className="text-center py-8">No registrations found.</td></tr>
+                  ) : (
+                    registrations.map(reg => (
+                      <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-[#1B1C15]">{reg.title} {reg.fullName}</p>
+                          <p className="text-xs text-gray-500">{reg.position}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p>{reg.diocese}</p>
+                          <p className="text-xs text-gray-500">{reg.province}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p>{reg.whatsappNumber}</p>
+                          <p className="text-xs text-gray-500">{reg.emailAddress}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p>{reg.modeOfTravel} ({new Date(reg.dateOfArrival).toLocaleDateString()})</p>
+                          {(reg.requireInternalTransport === 'Yes' || reg.comingWithDriverEscort === 'Yes') && (
+                            <div className="mt-1 flex gap-1">
+                              {reg.requireInternalTransport === 'Yes' && <span className="inline-block w-2 h-2 rounded-full bg-blue-500" title="Needs Transport"></span>}
+                              {reg.comingWithDriverEscort === 'Yes' && <span className="inline-block w-2 h-2 rounded-full bg-purple-500" title="Has Escort"></span>}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <select 
+                            value={reg.status || 'Pending'} 
+                            onChange={(e) => handleStatusChange(reg.id, e.target.value)}
+                            className={`text-xs font-semibold px-2 py-1.5 rounded outline-none border-r-4 border-transparent cursor-pointer ${
+                              reg.status === 'Approved' ? 'bg-emerald-50 text-emerald-700' : 
+                              reg.status === 'Declined' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                            }`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Declined">Declined</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button 
+                            onClick={() => handleDelete(reg.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Registration"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Detail Modal */}
-      {selectedReg && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div className="card fade-in" style={{ width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0 }}>Registration Details</h2>
-              <button onClick={() => setSelectedReg(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
-            </div>
-            
-            <div className="grid grid-cols-2" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Status</strong>
-                <div style={{ marginTop: '0.25rem' }}>
-                  <select 
-                    value={selectedReg.status || 'Pending'} 
-                    onChange={(e) => handleStatusChange(selectedReg.id, e.target.value)}
-                    style={{ padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)' }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Declined">Declined</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Submitted On</strong>
-                <div style={{ marginTop: '0.25rem' }}>{selectedReg.createdAt ? new Date(selectedReg.createdAt.toDate ? selectedReg.createdAt.toDate() : selectedReg.createdAt).toLocaleString() : 'N/A'}</div>
-              </div>
-            </div>
-
-            <hr style={{ margin: '1.5rem 0', border: 'none', borderTop: '1px solid var(--border)' }} />
-
-            <div className="grid grid-cols-2" style={{ gap: '1.5rem' }}>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Full Name</strong>
-                {selectedReg.title} {selectedReg.fullName}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Position</strong>
-                {selectedReg.position}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Diocese</strong>
-                {selectedReg.diocese}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Province</strong>
-                {selectedReg.province}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Email</strong>
-                <a href={`mailto:${selectedReg.emailAddress}`} style={{ color: 'var(--primary)' }}>{selectedReg.emailAddress}</a>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>WhatsApp</strong>
-                {selectedReg.whatsappNumber}
-              </div>
-            </div>
-
-            <h3 style={{ margin: '2rem 0 1rem', fontSize: '1.1rem' }}>Travel Information</h3>
-            <div className="grid grid-cols-2" style={{ gap: '1.5rem', background: '#F9FAFB', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Arrival Date</strong>
-                {selectedReg.dateOfArrival}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Mode of Travel</strong>
-                {selectedReg.modeOfTravel}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Internal Transport Needed?</strong>
-                {selectedReg.requireInternalTransport}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Coming with Driver/Escort?</strong>
-                {selectedReg.comingWithDriverEscort}
-              </div>
-              
-              {selectedReg.comingWithDriverEscort === 'Yes' && (
-                <>
-                  <div>
-                    <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Driver's Name</strong>
-                    {selectedReg.driverName || 'Not provided'}
-                  </div>
-                  <div>
-                    <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Escort's Name</strong>
-                    {selectedReg.escortName || 'Not provided'}
-                  </div>
-                </>
-              )}
-            </div>
-
           </div>
+          
         </div>
-      )}
-      
+      </main>
     </div>
   );
 }
