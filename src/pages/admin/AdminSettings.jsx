@@ -11,9 +11,6 @@ export default function AdminSettings() {
         <p className="eyebrow">Settings</p>
         <div>
           <h1 className="font-serif text-5xl leading-none text-slate-950 sm:text-6xl">Admin tools and actions.</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-600 sm:text-base">
-            Export the current dataset, sign out securely, and keep core operational links in one place.
-          </p>
         </div>
       </header>
 

@@ -48,7 +48,7 @@ export default function Login() {
           <section className="surface-card p-6 sm:p-8 lg:p-10">
             <Link to="/" className="ghost-link">Back to homepage</Link>
             <h2 className="mt-6 text-3xl font-semibold text-slate-950">Sign in</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">Use your Firebase-authenticated admin credentials.</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">Use your admin credentials.</p>
 
             {error ? <div className="mt-6 rounded-[1.25rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div> : null}
 
@@ -64,6 +64,7 @@ export default function Login() {
                   className="field-input"
                 />
               </label>
+              <div className="h-1" />
               <label>
                 <span className="field-label">Password</span>
                 <input

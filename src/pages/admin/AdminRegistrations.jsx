@@ -1,10 +1,34 @@
-import { Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Search, Trash2 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import StatusBadge from '../../components/StatusBadge';
 import { formatDate, formatDateTime, normalizeStatus } from '../../lib/registrations';
 
 export default function AdminRegistrations() {
   const { registrations, loading, handleDelete, handleStatusChange } = useOutletContext();
+  const [query, setQuery] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+
+  const filteredRegistrations = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return registrations;
+    return registrations.filter((registration) =>
+      [
+        registration.title,
+        registration.fullName,
+        registration.position,
+        registration.diocese,
+        registration.province,
+        registration.emailAddress,
+        registration.whatsappNumber,
+      ]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term))
+    );
+  }, [query, registrations]);
+
+  const selectedRegistration =
+    filteredRegistrations.find((registration) => registration.id === selectedId) || filteredRegistrations[0] || null;
 
   return (
     <div className="space-y-8">
@@ -18,42 +42,96 @@ export default function AdminRegistrations() {
         </div>
       </header>
 
+      <section className="surface-soft p-4 sm:p-5">
+        <label className="block">
+          <span className="field-label">Search registrations</span>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by name, email, diocese, or phone"
+              className="field-input pl-11"
+            />
+          </div>
+        </label>
+      </section>
+
       <section className="surface-card overflow-hidden">
         <div className="block lg:hidden">
           {loading ? (
             <div className="p-6 text-sm text-slate-500">Loading registrations...</div>
-          ) : registrations.length === 0 ? (
+          ) : filteredRegistrations.length === 0 ? (
             <div className="p-6 text-sm text-slate-500">No registrations found.</div>
           ) : (
             <div className="grid gap-4 p-4 sm:p-6">
-              {registrations.map((registration) => (
-                <article key={registration.id} className="surface-soft p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-slate-900">{registration.title} {registration.fullName}</p>
-                      <p className="mt-1 text-sm text-slate-500">{registration.position} · {registration.diocese}</p>
+              <div className="surface-soft divide-y divide-slate-100 overflow-hidden">
+                {filteredRegistrations.map((registration) => (
+                  <button
+                    key={registration.id}
+                    type="button"
+                    onClick={() => setSelectedId(registration.id)}
+                    className={`flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition ${
+                      selectedRegistration?.id === registration.id ? 'bg-slate-950 text-white' : 'bg-transparent text-slate-900'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{registration.title} {registration.fullName}</p>
+                      <p className={`mt-1 truncate text-sm ${selectedRegistration?.id === registration.id ? 'text-white/70' : 'text-slate-500'}`}>
+                        {registration.position} · {registration.diocese}
+                      </p>
                     </div>
                     <StatusBadge status={registration.status} compact />
+                  </button>
+                ))}
+              </div>
+
+              {selectedRegistration ? (
+                <article className="surface-soft p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-slate-900">{selectedRegistration.title} {selectedRegistration.fullName}</p>
+                      <p className="mt-1 text-sm text-slate-500">{selectedRegistration.position}</p>
+                    </div>
+                    <StatusBadge status={selectedRegistration.status} compact />
                   </div>
+
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <RecordDetail label="Province" value={registration.province} />
-                    <RecordDetail label="Contact" value={`${registration.whatsappNumber} · ${registration.emailAddress}`} />
-                    <RecordDetail label="Arrival" value={formatDate(registration.dateOfArrival)} />
-                    <RecordDetail label="Travel" value={registration.modeOfTravel || 'Not provided'} />
+                    <RecordDetail label="Diocese" value={selectedRegistration.diocese} />
+                    <RecordDetail label="Province" value={selectedRegistration.province} />
+                    <RecordDetail label="Contact" value={`${selectedRegistration.whatsappNumber} · ${selectedRegistration.emailAddress}`} />
+                    <RecordDetail label="Arrival" value={formatDate(selectedRegistration.dateOfArrival)} />
+                    <RecordDetail label="Travel" value={selectedRegistration.modeOfTravel || 'Not provided'} />
+                    <RecordDetail label="Transport" value={selectedRegistration.requireInternalTransport || 'No'} />
+                    <RecordDetail label="Driver/Escort" value={selectedRegistration.comingWithDriverEscort || 'No'} />
+                    <RecordDetail label="Submitted" value={formatDateTime(selectedRegistration.createdAt)} />
                   </div>
+
+                  {selectedRegistration.comingWithDriverEscort === 'Yes' ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <RecordDetail label="Driver's name" value={selectedRegistration.driverName || 'Not provided'} />
+                      <RecordDetail label="Escort's name" value={selectedRegistration.escortName || 'Not provided'} />
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <select value={normalizeStatus(registration.status)} onChange={(event) => handleStatusChange(registration.id, event.target.value)} className="field-input">
+                    <select
+                      value={normalizeStatus(selectedRegistration.status)}
+                      onChange={(event) => handleStatusChange(selectedRegistration.id, event.target.value)}
+                      className="field-input"
+                    >
                       <option value="Pending">Pending</option>
                       <option value="Approved">Approved</option>
                       <option value="Declined">Declined</option>
                     </select>
-                    <button onClick={() => handleDelete(registration.id)} className="secondary-button border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">
+                    <button onClick={() => handleDelete(selectedRegistration.id)} className="secondary-button border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">
                       <Trash2 className="h-4 w-4" />
                       Delete record
                     </button>
                   </div>
                 </article>
-              ))}
+              ) : null}
             </div>
           )}
         </div>
@@ -73,10 +151,10 @@ export default function AdminRegistrations() {
             <tbody>
               {loading ? (
                 <tr><td colSpan="6" className="px-7 py-10 text-center text-slate-500">Loading registrations...</td></tr>
-              ) : registrations.length === 0 ? (
+              ) : filteredRegistrations.length === 0 ? (
                 <tr><td colSpan="6" className="px-7 py-10 text-center text-slate-500">No registrations found.</td></tr>
               ) : (
-                registrations.map((registration) => (
+                filteredRegistrations.map((registration) => (
                   <tr key={registration.id} className="border-b border-slate-100 align-top hover:bg-slate-50/60">
                     <td className="px-7 py-6">
                       <p className="font-semibold text-slate-900">{registration.title} {registration.fullName}</p>

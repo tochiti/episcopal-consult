@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarRange, CheckCircle2, ClipboardList, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CalendarRange, CheckCircle2, ClipboardList, Phone, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DNDN_FACTS } from '../lib/registrations';
 import PublicFooter from '../components/PublicFooter';
@@ -18,6 +18,21 @@ const steps = [
     icon: CheckCircle2,
     title: 'Track your status',
     copy: 'Return with the same email address to check the current registration status at any time.',
+  },
+];
+
+const contacts = [
+  {
+    name: 'Rev Canon Gideon Genka',
+    phone: '08060821822',
+    dial: 'tel:+2348060821822',
+    whatsapp: 'https://wa.me/2348060821822',
+  },
+  {
+    name: 'Engr. Edwin Amadi',
+    phone: '08036716352',
+    dial: 'tel:+2348036716352',
+    whatsapp: 'https://wa.me/2348036716352',
   },
 ];
 
@@ -115,19 +130,54 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="surface-card overflow-hidden p-6 sm:p-8">
-              <div className="flex items-start gap-4">
-                <div className="icon-chip bg-teal-600 text-white">
-                  <ShieldCheck className="h-5 w-5" />
+            <div className="grid gap-4">
+              <div className="surface-card overflow-hidden p-6 sm:p-8">
+                <div className="flex items-start gap-4">
+                  <div className="icon-chip bg-teal-600 text-white">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="eyebrow">Status access</p>
+                    <h2 className="mt-4 font-serif text-3xl text-slate-950">Already submitted your registration?</h2>
+                    <div className="mt-6">
+                      <Link to="/dashboard" className="primary-button">
+                        Open status dashboard
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="eyebrow">Status access</p>
-                  <h2 className="mt-4 font-serif text-3xl text-slate-950">Already submitted your registration?</h2>
-                  <div className="mt-6">
-                    <Link to="/dashboard" className="primary-button">
-                      Open status dashboard
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
+              </div>
+
+              <div className="surface-soft p-6 sm:p-8">
+                <div className="flex items-start gap-4">
+                  <div className="icon-chip bg-slate-950 text-white">
+                    <Phone className="h-5 w-5" />
+                  </div>
+                  <div className="w-full">
+                    <p className="eyebrow">Need help?</p>
+                    <h2 className="mt-4 text-2xl font-semibold text-slate-950">Contact the registration team</h2>
+                    <div className="mt-5 space-y-4">
+                      {contacts.map((contact) => (
+                        <div key={contact.phone} className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                          <p className="font-semibold text-slate-900">{contact.name}</p>
+                          <p className="mt-1 text-sm text-slate-500">{contact.phone}</p>
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            <a href={contact.dial} className="secondary-button px-4 py-2.5">
+                              Call
+                            </a>
+                            <a
+                              href={contact.whatsapp}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="primary-button px-4 py-2.5"
+                            >
+                              WhatsApp
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
