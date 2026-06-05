@@ -118,7 +118,9 @@ export default function UserDashboard() {
                 {result.comingWithDriverEscort === 'Yes' ? (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <DetailCard label="Driver's name" value={result.driverName || 'Not provided'} />
+                    <DetailCard label="Driver's phone" value={result.driverPhoneNumber || 'Not provided'} />
                     <DetailCard label="Escort's name" value={result.escortName || 'Not provided'} />
+                    <DetailCard label="Escort's phone" value={result.escortPhoneNumber || 'Not provided'} />
                   </div>
                 ) : null}
               </div>

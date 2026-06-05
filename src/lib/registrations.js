@@ -70,7 +70,9 @@ export const REGISTRATION_EXPORT_COLUMNS = [
   { key: 'requireInternalTransport', label: 'Require Internal Transport' },
   { key: 'comingWithDriverEscort', label: 'Coming with Driver/Escort' },
   { key: 'driverName', label: 'Driver Name' },
+  { key: 'driverPhoneNumber', label: 'Driver Phone Number' },
   { key: 'escortName', label: 'Escort Name' },
+  { key: 'escortPhoneNumber', label: 'Escort Phone Number' },
   { key: 'status', label: 'Status', format: (row) => normalizeStatus(row.status) },
   { key: 'createdAt', label: 'Registration Date', format: (row) => formatDateTime(row.createdAt) },
 ];

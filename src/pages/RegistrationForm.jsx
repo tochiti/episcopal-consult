@@ -18,7 +18,9 @@ const initialForm = {
   requireInternalTransport: 'No',
   comingWithDriverEscort: 'No',
   driverName: '',
+  driverPhoneNumber: '',
   escortName: '',
+  escortPhoneNumber: '',
 };
 
 const sections = [
@@ -75,7 +77,9 @@ export default function RegistrationForm() {
     setFormData((current) => ({
       ...current,
       [name]: value,
-      ...(name === 'comingWithDriverEscort' && value === 'No' ? { driverName: '', escortName: '' } : {}),
+      ...(name === 'comingWithDriverEscort' && value === 'No'
+        ? { driverName: '', driverPhoneNumber: '', escortName: '', escortPhoneNumber: '' }
+        : {}),
     }));
   };
 
@@ -289,6 +293,17 @@ export default function RegistrationForm() {
                         />
                       </label>
                       <label>
+                        <span className="field-label">Driver&apos;s Phone Number</span>
+                        <input
+                          type="tel"
+                          name="driverPhoneNumber"
+                          value={formData.driverPhoneNumber}
+                          onChange={handleChange}
+                          placeholder="+234..."
+                          className="field-input"
+                        />
+                      </label>
+                      <label>
                         <span className="field-label">Escort&apos;s Name</span>
                         <input
                           type="text"
@@ -296,6 +311,17 @@ export default function RegistrationForm() {
                           value={formData.escortName}
                           onChange={handleChange}
                           placeholder="Escort's full name"
+                          className="field-input"
+                        />
+                      </label>
+                      <label>
+                        <span className="field-label">Escort&apos;s Phone Number</span>
+                        <input
+                          type="tel"
+                          name="escortPhoneNumber"
+                          value={formData.escortPhoneNumber}
+                          onChange={handleChange}
+                          placeholder="+234..."
                           className="field-input"
                         />
                       </label>

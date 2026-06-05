@@ -78,7 +78,9 @@ export default function AdminRegistrationDetail() {
               title="Companion details"
               items={[
                 ["Driver's name", registration.driverName || 'Not provided'],
+                ["Driver's phone", registration.driverPhoneNumber || 'Not provided'],
                 ["Escort's name", registration.escortName || 'Not provided'],
+                ["Escort's phone", registration.escortPhoneNumber || 'Not provided'],
               ]}
             />
           ) : null}
