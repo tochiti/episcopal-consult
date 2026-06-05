@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { saveRegistration } from '../db';
 import PublicFooter from '../components/PublicFooter';
-import { DIOCESE_OPTIONS, PROVINCE_OPTIONS, TITLE_OPTIONS } from '../lib/registrationOptions';
+import { DIOCESE_OPTIONS, PROVINCE_OPTIONS } from '../lib/registrationOptions';
 
 const initialForm = {
   title: '',
@@ -51,6 +51,7 @@ const labels = {
 };
 
 const placeholders = {
+  title: 'Most Rev. / Rt. Rev.',
   fullName: 'Delegate full name',
   position: 'Office or role',
   whatsappNumber: '+234...',
@@ -212,22 +213,6 @@ export default function RegistrationForm() {
                   <div className="grid gap-5 sm:grid-cols-2">
                     {section.fields.map((field) => {
                       const fullWidth = field === 'province';
-
-                      if (field === 'title') {
-                        return (
-                          <label key={field}>
-                            <span className="field-label">{labels[field]}</span>
-                            <select name={field} required value={formData[field]} onChange={handleChange} className="field-input">
-                              <option value="">Select title</option>
-                              {TITLE_OPTIONS.map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        );
-                      }
 
                       if (field === 'diocese' || field === 'province') {
                         const options = field === 'diocese' ? DIOCESE_OPTIONS : PROVINCE_OPTIONS;
