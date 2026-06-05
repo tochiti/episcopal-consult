@@ -76,7 +76,7 @@ export default function Login() {
                   className="field-input"
                 />
               </label>
-              <button type="submit" disabled={isLoading} className="primary-button w-full">
+              <button type="submit" disabled={isLoading} className="primary-button mt-3 w-full">
                 {isLoading ? 'Signing in...' : 'Sign in to dashboard'}
                 {!isLoading ? <LockKeyhole className="h-4 w-4" /> : null}
               </button>
