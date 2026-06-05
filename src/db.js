@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 const COLLECTION_NAME = 'episcopal_consultation_registrations';
@@ -39,5 +39,30 @@ export const updateRegistrationStatus = async (id, status) => {
   } catch (e) {
     console.error("Error updating document: ", e);
     throw e;
+  }
+};
+
+export const getRegistrationByEmail = async (email) => {
+  try {
+    const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const registrations = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    return registrations.find(r => r.emailAddress.toLowerCase() === email.toLowerCase());
+  } catch (error) {
+    console.error("Error finding registration: ", error);
+    throw error;
+  }
+};
+
+export const deleteRegistration = async (id) => {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting registration: ", error);
+    throw error;
   }
 };
