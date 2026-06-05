@@ -1,20 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
   color-scheme: light;
-  --brand-ink: #2c2140;
-  --brand-plum: #4a315d;
-  --brand-gold: #c59e2b;
-  --brand-cream: #fcf7eb;
-  --brand-panel: rgba(255, 255, 255, 0.88);
-  --brand-line: rgba(74, 49, 93, 0.14);
-  --brand-copy: #544d63;
+  --bg: #f6f3ee;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-solid: #fffdf9;
+  --line: rgba(18, 24, 38, 0.09);
+  --text: #151821;
+  --muted: #5a6475;
+  --deep: #111827;
+  --accent: #0f766e;
+  --accent-2: #f97316;
+  --accent-3: #2563eb;
 }
 
 @theme {
-  --font-sans: "Manrope", sans-serif;
-  --font-serif: "Fraunces", serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-serif: "Instrument Serif", serif;
 }
 
 @layer base {
@@ -30,11 +33,11 @@
     margin: 0;
     min-height: 100vh;
     font-family: var(--font-sans);
-    color: var(--brand-ink);
+    color: var(--text);
     background:
-      radial-gradient(circle at top left, rgba(197, 158, 43, 0.18), transparent 32%),
-      radial-gradient(circle at top right, rgba(74, 49, 93, 0.12), transparent 28%),
-      linear-gradient(180deg, #fffdf7 0%, #f8f1e2 100%);
+      radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 28%),
+      radial-gradient(circle at top right, rgba(249, 115, 22, 0.10), transparent 24%),
+      linear-gradient(180deg, #fbfaf7 0%, #f1ece3 100%);
   }
 
   a {
@@ -55,15 +58,23 @@
 
 @layer components {
   .page-shell {
-    @apply min-h-screen bg-transparent;
+    @apply min-h-screen;
   }
 
-  .glass-panel {
-    @apply rounded-[2rem] border border-white/70 bg-white/85 shadow-[0_24px_80px_-32px_rgba(27,24,42,0.45)] backdrop-blur-xl;
+  .shell-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 
-  .section-label {
-    @apply text-xs font-semibold uppercase tracking-[0.3em] text-amber-700;
+  .surface-card {
+    @apply rounded-[2rem] border border-white/70 bg-[rgba(255,253,249,0.84)] shadow-[0_24px_70px_-34px_rgba(15,23,42,0.35)] backdrop-blur-md;
+  }
+
+  .surface-soft {
+    @apply rounded-[1.5rem] border border-slate-200/80 bg-white/80 shadow-sm;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.26em] text-slate-500;
   }
 
   .field-label {
@@ -71,7 +82,7 @@
   }
 
   .field-input {
-    @apply w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3.5 text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100;
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-100;
   }
 
   .field-hint {
@@ -79,10 +90,14 @@
   }
 
   .primary-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .secondary-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .ghost-link {
+    @apply inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950;
   }
 }

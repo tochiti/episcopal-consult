@@ -8,7 +8,7 @@ export default function StatusBadge({ status, compact = false }) {
 
   return (
     <span
-      className={`${meta.pill} inline-flex items-center gap-2 rounded-full font-semibold ${
+      className={`${meta.pill} inline-flex items-center gap-2 rounded-full font-semibold shadow-sm ${
         compact ? 'px-2.5 py-1 text-xs' : 'px-4 py-2 text-sm'
       }`}
     >

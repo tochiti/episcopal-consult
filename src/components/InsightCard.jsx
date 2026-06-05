@@ -1,6 +1,6 @@
 export default function InsightCard({ icon: Icon, label, value, accent, note }) {
   return (
-    <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-[0_20px_60px_-24px_rgba(26,31,44,0.35)] backdrop-blur">
+    <div className="surface-card p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{label}</p>
