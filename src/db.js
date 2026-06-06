@@ -28,7 +28,9 @@ export const saveRegistration = async (data) => {
       emailAddress: data.emailAddress.trim(),
       emailAddressNormalized: data.emailAddress.trim().toLowerCase(),
       driverName: data.comingWithDriverEscort === 'Yes' ? data.driverName.trim() : '',
+      driverPhoneNumber: data.comingWithDriverEscort === 'Yes' ? data.driverPhoneNumber.trim() : '',
       escortName: data.comingWithDriverEscort === 'Yes' ? data.escortName.trim() : '',
+      escortPhoneNumber: data.comingWithDriverEscort === 'Yes' ? data.escortPhoneNumber.trim() : '',
       status: 'Pending',
       createdAt: serverTimestamp(),
     };
