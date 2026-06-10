@@ -10,19 +10,26 @@ const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
 const AdminRegistrations = lazy(() => import('./pages/admin/AdminRegistrations'));
 const AdminRegistrationDetail = lazy(() => import('./pages/admin/AdminRegistrationDetail'));
+const AdminBadges = lazy(() => import('./pages/admin/AdminBadges'));
+const AdminAccommodation = lazy(() => import('./pages/admin/AdminAccommodation'));
+const AdminTransport = lazy(() => import('./pages/admin/AdminTransport'));
+const AdminProtocol = lazy(() => import('./pages/admin/AdminProtocol'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const Login = lazy(() => import('./pages/Login'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard'));
 
 function ScreenLoader({ copy = 'Loading portal...' }) {
   return (
-    <div className="page-shell flex items-center justify-center px-6">
-      <div className="surface-card w-full max-w-md p-8 text-center">
-        <img src="/logo.png" alt="DNDN logo" className="mx-auto h-16 w-16 rounded-full bg-white p-1.5 shadow-sm" />
-        <p className="eyebrow mt-5">Episcopal Consult DNDN</p>
-        <h1 className="mt-3 font-serif text-3xl text-slate-950">{copy}</h1>
-        <div className="mx-auto mt-6 h-2 w-32 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full w-1/2 animate-pulse rounded-full bg-teal-600" />
+    <div className="page-shell relative flex items-center justify-center px-6">
+      <span className="hero-blob" style={{ top: '20%', left: '15%', width: 320, height: 320, background: 'radial-gradient(circle, rgba(224,178,90,0.18), transparent 70%)' }} aria-hidden />
+      <span className="hero-blob" style={{ bottom: '10%', right: '10%', width: 360, height: 360, background: 'radial-gradient(circle, rgba(110,29,42,0.55), transparent 70%)' }} aria-hidden />
+      <div className="card relative z-10 w-full max-w-md p-8 text-center">
+        <img src="/logo.png" alt="DNDN logo" className="logo-lg mx-auto" />
+        <p className="eyebrow mt-5">DNDN 2026</p>
+        <h1 className="display-heading mt-3 text-4xl">{copy}</h1>
+        <div className="mx-auto mt-6 h-1 w-32 overflow-hidden rounded-full bg-[rgba(224,178,90,0.18)]">
+          <div className="h-full w-1/2 animate-pulse rounded-full bg-[var(--accent)]" />
         </div>
       </div>
     </div>
@@ -40,7 +47,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = 'Episcopal Consult DNDN';
+    document.title = 'Episcopal Consult DNDN · DNDN 2026';
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -67,6 +74,11 @@ function App() {
             <Route index element={<AdminOverview />} />
             <Route path="registrations" element={<AdminRegistrations />} />
             <Route path="registrations/:registrationId" element={<AdminRegistrationDetail />} />
+            <Route path="badges" element={<AdminBadges />} />
+            <Route path="accommodation" element={<AdminAccommodation />} />
+            <Route path="transport" element={<AdminTransport />} />
+            <Route path="protocol" element={<AdminProtocol />} />
+            <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>

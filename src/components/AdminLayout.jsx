@@ -1,22 +1,72 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Download, LayoutGrid, LogOut, Settings } from 'lucide-react';
+import {
+  Award,
+  BedDouble,
+  Car,
+  Crown,
+  Download,
+  FileText,
+  LayoutGrid,
+  LogOut,
+  Menu,
+  Settings,
+  Users,
+  X,
+} from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { deleteRegistration, getRegistrations, updateRegistrationStatus } from '../db';
-import { downloadRegistrationsCsv, summarizeRegistrations } from '../lib/registrations';
+import { PROGRAMME_DATES, summarizeRegistrations } from '../lib/registrations';
+import useDocumentTitle from '../lib/useDocumentTitle';
 
-const navItems = [
+/* Admin nav — all eight destinations in a single ordered list.
+   Reused by the desktop sidebar, the mobile slide-in drawer, and the
+   mobile bottom nav. */
+const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutGrid, end: true },
-  { to: '/admin/registrations', label: 'Registrations', icon: BarChart3 },
+  { to: '/admin/registrations', label: 'Registrations', icon: Users },
+  { to: '/admin/badges', label: 'Badges', icon: Award },
+  { to: '/admin/accommodation', label: 'Accommodation', icon: BedDouble },
+  { to: '/admin/transport', label: 'Transport', icon: Car },
+  { to: '/admin/protocol', label: 'Protocol', icon: Crown },
+  { to: '/admin/reports', label: 'Reports', icon: FileText },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
+/* Mobile bottom nav — only the four most-used destinations plus a Menu
+   button that opens the full drawer. */
+const mobileBottomNav = adminNav.slice(0, 4);
+
 export default function AdminLayout() {
+  useDocumentTitle('Secretariat Console — DNDN 2026');
+
+  // Keep the admin console out of search results — delegate data is
+  // private and the screens only render for authenticated staff.
+  useEffect(() => {
+    const existing = document.querySelector('meta[name="robots"]');
+    const content = 'noindex, nofollow, noarchive';
+    if (existing) {
+      const previous = existing.getAttribute('content');
+      existing.setAttribute('content', content);
+      return () => {
+        if (previous) existing.setAttribute('content', previous);
+      };
+    }
+    const tag = document.createElement('meta');
+    tag.setAttribute('name', 'robots');
+    tag.setAttribute('content', content);
+    document.head.appendChild(tag);
+    return () => {
+      tag.remove();
+    };
+  }, []);
+
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState('default');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,9 +75,7 @@ export default function AdminLayout() {
     async function fetchData() {
       try {
         const data = await getRegistrations();
-        if (active) {
-          setRegistrations(data);
-        }
+        if (active) setRegistrations(data);
       } catch (error) {
         console.error(error);
         if (active) {
@@ -35,9 +83,7 @@ export default function AdminLayout() {
           setMessageTone('error');
         }
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
     void fetchData();
@@ -48,6 +94,21 @@ export default function AdminLayout() {
 
   const analytics = useMemo(() => summarizeRegistrations(registrations), [registrations]);
 
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (drawerOpen) {
+      const previous = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = previous;
+      };
+    }
+    return undefined;
+  }, [drawerOpen]);
+
   const setFeedback = (copy, tone = 'default') => {
     setMessage(copy);
     setMessageTone(tone);
@@ -57,31 +118,30 @@ export default function AdminLayout() {
     try {
       await updateRegistrationStatus(id, newStatus);
       setRegistrations((current) => current.map((item) => (item.id === id ? { ...item, status: newStatus } : item)));
-      setFeedback(`Registration status updated to ${newStatus}.`, 'success');
+      setFeedback(`Status updated to ${newStatus}.`, 'success');
     } catch (error) {
       console.error(error);
-      setFeedback('Could not update registration status.', 'error');
+      setFeedback('Could not update status.', 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this registration record? This action cannot be undone.')) return;
+    if (!window.confirm('Delete this record? This cannot be undone.')) return;
     try {
       await deleteRegistration(id);
       setRegistrations((current) => current.filter((item) => item.id !== id));
-      setFeedback('Registration deleted successfully.', 'success');
+      setFeedback('Record deleted.', 'success');
       if (location.pathname.includes(`/admin/registrations/${id}`)) {
         navigate('/admin/registrations');
       }
     } catch (error) {
       console.error(error);
-      setFeedback('Could not delete registration.', 'error');
+      setFeedback('Could not delete record.', 'error');
     }
   };
 
   const handleExportCSV = () => {
-    downloadRegistrationsCsv(registrations);
-    setFeedback('CSV export started.', 'success');
+    window.dispatchEvent(new CustomEvent('admin:export-csv'));
   };
 
   const handleSignOut = async () => {
@@ -91,33 +151,125 @@ export default function AdminLayout() {
 
   const messageClassName =
     messageTone === 'error'
-      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      ? 'border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] text-[var(--err)]'
       : messageTone === 'success'
-        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-        : 'border-slate-200 bg-slate-50 text-slate-700';
+        ? 'border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] text-[var(--ok)]'
+        : 'border-[var(--line)] bg-[rgba(12,6,8,0.5)] text-[var(--muted)]';
 
   return (
-    <div className="page-shell pb-24 lg:pb-10">
-      <div className="shell-container pt-6 sm:pt-8 lg:pt-10">
-        <div className="grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)] lg:items-start">
-          <aside className="hidden lg:block">
-            <div className="surface-card sticky top-8 p-5">
-              <div className="flex items-center gap-3 pb-5">
-                <img src="/logo.png" alt="DNDN logo" className="h-11 w-11 rounded-full bg-white p-1.5 shadow-sm" />
+    <div className="page-shell relative">
+      <span className="hero-blob" style={{ top: '8%', right: '-4%', width: 360, height: 360, background: 'radial-gradient(circle, rgba(224,178,90,0.08), transparent 70%)' }} aria-hidden />
+
+      {/* ──────────────  FIXED TOP HEADER  ──────────────
+          • Mobile: hamburger on the LEFT (drawer opens from left), logo +
+            brand centred.
+          • Widescreen (lg+): logo + brand on the left, programme date +
+            quick snapshot + Export + sign-out on the right. NO inline nav —
+            the left sidebar carries navigation. */}
+      <header className="admin-topbar fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 border-b border-[var(--line)] bg-[rgba(12,6,8,0.92)] backdrop-blur lg:h-16">
+        {/* Mobile hamburger — LEFT side */}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="ml-3 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-[var(--line)] text-[var(--text)] lg:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Logo + brand */}
+        <div className="flex items-center gap-2.5 px-3 lg:ml-6 lg:px-0">
+          <img
+            src="/logo.png"
+            alt="DNDN"
+            className="h-8 w-8 rounded-full bg-[var(--text)] p-0.5 shadow-sm lg:h-9 lg:w-9"
+          />
+          <div className="leading-tight">
+            <p className="font-mono text-[0.55rem] font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
+              DNDN 2026
+            </p>
+            <p className="font-display text-[15px] leading-none text-[var(--text-bright)] lg:text-base">
+              Secretariat
+            </p>
+          </div>
+        </div>
+
+        {/* Widescreen right side — programme date + quick snapshot + export + sign out */}
+        <div className="ml-auto flex items-center gap-2 pr-4 lg:gap-3 lg:pr-6">
+          <span className="hidden font-mono text-[0.6rem] uppercase tracking-[0.22em] text-[var(--muted-2)] lg:inline-flex">
+            {PROGRAMME_DATES.short}
+          </span>
+          <div className="hidden items-center gap-2 rounded-full border border-[var(--line)] bg-[rgba(12,6,8,0.5)] px-3 py-1.5 lg:inline-flex">
+            <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[var(--muted-2)]">
+              {analytics.approved}/{analytics.total} approved
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="secondary-button hidden px-3 py-1.5 text-xs lg:inline-flex"
+          >
+            <Download className="h-3.5 w-3.5" /> Export
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] text-[var(--muted)] hover:text-[var(--text-bright)]"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
+
+      {/* ──────────────  DESKTOP LEFT SIDEBAR  ────────────── */}
+      <aside className="fixed left-0 top-16 z-20 hidden h-[calc(100vh-4rem)] w-64 border-r border-[var(--line)] bg-[rgba(12,6,8,0.7)] backdrop-blur lg:block">
+        <SidebarPanel />
+      </aside>
+
+      {/* ──────────────  MOBILE SLIDE-IN DRAWER (from left)  ────────────── */}
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-label="Close menu"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-80 max-w-[88vw] flex-col border-r border-[var(--line-strong)] bg-[rgba(12,6,8,0.97)] backdrop-blur">
+            <div className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <img src="/logo.png" alt="DNDN" className="h-9 w-9 rounded-full bg-[var(--text)] p-0.5" />
                 <div>
-                  <p className="eyebrow">Admin</p>
-                  <p className="text-sm font-semibold text-slate-900">Episcopal Consult</p>
+                  <p className="font-mono text-[0.55rem] uppercase tracking-[0.18em] text-[var(--accent)]">
+                    DNDN 2026
+                  </p>
+                  <p className="font-display text-base leading-none text-[var(--text-bright)]">Secretariat</p>
                 </div>
               </div>
-              <nav className="space-y-2">
-                {navItems.map(({ to, label, icon: Icon, end }) => (
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] text-[var(--muted)]"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto p-3">
+              <p className="nav-group-label">Operations</p>
+              <div className="space-y-1.5">
+                {adminNav.map(({ to, label, icon: Icon, end }) => (
                   <NavLink
                     key={to}
                     to={to}
                     end={end}
+                    onClick={() => setDrawerOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                        isActive ? 'bg-slate-950 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                      `flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                        isActive
+                          ? 'border-[var(--accent)] bg-[var(--accent)] text-[#1a0c10]'
+                          : 'border-transparent text-[var(--muted)] hover:border-[var(--line-strong)] hover:bg-[rgba(224,178,90,0.05)] hover:text-[var(--text)]'
                       }`
                     }
                   >
@@ -125,48 +277,127 @@ export default function AdminLayout() {
                     {label}
                   </NavLink>
                 ))}
-              </nav>
-              <div className="mt-6 space-y-3 border-t border-slate-100 pt-5">
-                <button onClick={handleExportCSV} className="secondary-button w-full justify-center">
-                  <Download className="h-4 w-4" />
-                  Export CSV
-                </button>
-                <button onClick={handleSignOut} className="secondary-button w-full justify-center">
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
               </div>
+            </nav>
+            <div className="space-y-2 border-t border-[var(--line)] p-3">
+              <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-3.5">
+                <p className="eyebrow">Quick snapshot</p>
+                <p className="display-heading mt-1 text-2xl text-[var(--accent)]">{analytics.total}</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted-2)]">
+                  {analytics.approved} approved · {analytics.total - analytics.approved} pending / declined
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  handleExportCSV();
+                  setDrawerOpen(false);
+                }}
+                className="secondary-button w-full justify-center"
+              >
+                <Download className="h-4 w-4" /> Export CSV
+              </button>
+              <button type="button" onClick={handleSignOut} className="secondary-button w-full justify-center">
+                <LogOut className="h-4 w-4" /> Sign out
+              </button>
             </div>
-          </aside>
+          </div>
+        </div>
+      ) : null}
 
-          <div className="min-w-0">
-            {message ? <div className={`mb-6 rounded-[1.25rem] border p-4 text-sm ${messageClassName}`}>{message}</div> : null}
+      {/* ──────────────  MAIN CONTENT  ──────────────
+          Widescreen gets pl-64 to clear the left sidebar. */}
+      <main className="admin-main relative z-10 pt-14 lg:pl-64 lg:pt-16">
+        <div className="min-h-[calc(100vh-3.5rem)] pb-24 lg:min-h-[calc(100vh-4rem)] lg:pb-12">
+          <div className="px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
+            {message ? (
+              <div className={`mb-5 rounded-xl border p-3.5 text-sm ${messageClassName}`}>{message}</div>
+            ) : null}
             <Outlet
               context={{
                 registrations,
                 loading,
                 analytics,
-                location,
                 handleDelete,
-                handleExportCSV,
-                handleSignOut,
                 handleStatusChange,
+                handleSignOut,
               }}
             />
           </div>
         </div>
+      </main>
+
+      {/* ──────────────  MOBILE BOTTOM NAV  ────────────── */}
+      <nav className="admin-bottom-nav fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--line-strong)] bg-[rgba(12,6,8,0.96)] backdrop-blur lg:hidden">
+        {mobileBottomNav.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex min-h-[56px] flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${
+                isActive
+                  ? 'text-[var(--accent)]'
+                  : 'text-[var(--muted-2)] hover:text-[var(--text)]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={`flex h-7 w-12 items-center justify-center rounded-full transition ${
+                    isActive ? 'bg-[rgba(224,178,90,0.12)]' : ''
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span>{label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)] hover:text-[var(--text)]"
+          aria-label="Open more menu"
+        >
+          <span className="flex h-7 w-12 items-center justify-center rounded-full">
+            <Menu className="h-5 w-5" />
+          </span>
+          <span>Menu</span>
+        </button>
+      </nav>
+    </div>
+  );
+}
+
+function SidebarPanel() {
+  return (
+    <div className="flex h-full flex-col p-5">
+      {/* Decorative cross rule — anchors the nav visually now that the
+          brand block moved to the top header. */}
+      <div className="my-2 flex items-center justify-center gap-2 pb-4" aria-hidden>
+        <span className="h-px w-8 bg-[var(--line)]" />
+        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
+          <path d="M7 0v14M0 7h14" stroke="var(--accent)" strokeWidth="1" />
+        </svg>
+        <span className="h-px w-8 bg-[var(--line)]" />
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-[rgba(255,253,249,0.95)] px-4 py-3 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-around">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+      <nav className="flex-1 space-y-3 overflow-y-auto">
+        <p className="nav-group-label">Operations</p>
+        <div className="space-y-1.5">
+          {adminNav.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex min-w-[86px] flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-semibold transition ${
-                  isActive ? 'bg-slate-950 text-white' : 'text-slate-600'
+                `flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition ${
+                  isActive
+                    ? 'border-[var(--accent)] bg-[var(--accent)] text-[#1a0c10] shadow-[0_0_18px_rgba(224,178,90,0.3)]'
+                    : 'border-transparent text-[var(--muted)] hover:border-[var(--line-strong)] hover:bg-[rgba(224,178,90,0.05)] hover:text-[var(--text-bright)]'
                 }`
               }
             >
@@ -176,6 +407,8 @@ export default function AdminLayout() {
           ))}
         </div>
       </nav>
+
+      <p className="mt-4 text-center font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">© DNDN 2026</p>
     </div>
   );
 }

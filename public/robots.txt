@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /dashboard
+
+Sitemap: https://dndn2026.org/sitemap.xml

@@ -1,0 +1,56 @@
+{
+  "name": "Episcopal Consultation · DNDN 2026",
+  "short_name": "DNDN 2026",
+  "description": "Registration portal for the Episcopal Consultation hosted by the Diocese of Niger Delta North.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#160a0d",
+  "theme_color": "#1a0c10",
+  "categories": ["productivity", "business", "events"],
+  "lang": "en-NG",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Register",
+      "short_name": "Register",
+      "description": "Submit a new registration",
+      "url": "/register",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Look up status",
+      "short_name": "Status",
+      "description": "Check your accreditation status by email",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Secretariat sign-in",
+      "short_name": "Sign in",
+      "description": "Open the administrative console",
+      "url": "/login",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
