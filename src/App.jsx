@@ -24,8 +24,8 @@ function ScreenLoader({ copy = 'Loading portal...' }) {
     <div className="page-shell relative flex items-center justify-center px-6">
       <span className="hero-blob" style={{ top: '20%', left: '15%', width: 320, height: 320, background: 'radial-gradient(circle, rgba(224,178,90,0.18), transparent 70%)' }} aria-hidden />
       <span className="hero-blob" style={{ bottom: '10%', right: '10%', width: 360, height: 360, background: 'radial-gradient(circle, rgba(110,29,42,0.55), transparent 70%)' }} aria-hidden />
-      <div className="surface-glass relative z-10 w-full max-w-md p-8 text-center">
-        <img src="/logo.png" alt="DNDN logo" className="mx-auto h-16 w-16 rounded-full bg-[var(--text)] p-1.5 shadow-sm" />
+      <div className="card relative z-10 w-full max-w-md p-8 text-center">
+        <img src="/logo.png" alt="DNDN logo" className="logo-lg mx-auto" />
         <p className="eyebrow mt-5">DNDN 2026</p>
         <h1 className="display-heading mt-3 text-4xl">{copy}</h1>
         <div className="mx-auto mt-6 h-1 w-32 overflow-hidden rounded-full bg-[rgba(224,178,90,0.18)]">

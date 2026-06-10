@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -6,32 +6,28 @@
   --bg: #160a0d;
   --bg-2: #1f0d12;
   --bg-3: #0c0608;
-  --panel: rgba(34, 16, 20, 0.62);
-  --panel-solid: #1a0c10;
-  --panel-strong: rgba(44, 22, 28, 0.78);
-  --line: rgba(224, 178, 90, 0.16);
-  --line-strong: rgba(224, 178, 90, 0.34);
+  --panel: #1a0c10;
+  --panel-2: #221014;
+  --panel-3: #2c161c;
+  --line: rgba(224, 178, 90, 0.14);
+  --line-strong: rgba(224, 178, 90, 0.32);
   --text: #f3eada;
   --text-bright: #fbf6e9;
-  --muted: rgba(243, 234, 218, 0.68);
-  --muted-2: rgba(243, 234, 218, 0.45);
+  --muted: rgba(243, 234, 218, 0.7);
+  --muted-2: rgba(243, 234, 218, 0.5);
   --accent: #e0b25a;
   --accent-hover: #ecc273;
   --accent-2: #b8893c;
   --wine: #6e1d2a;
   --wine-2: #4a121d;
   --ok: #5fb98a;
-  --ok-soft: rgba(95, 185, 138, 0.14);
   --warn: #e9b14a;
-  --warn-soft: rgba(233, 177, 74, 0.14);
   --err: #e57787;
-  --err-soft: rgba(229, 119, 135, 0.14);
 }
 
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-display: "Cormorant Garamond", "Inter", serif;
-  --font-serif: "Cormorant Garamond", "Inter", serif;
+  --font-display: "Bebas Neue", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -44,20 +40,118 @@
     font-family: var(--font-sans);
     color: var(--text);
     background:
-      radial-gradient(ellipse 70% 50% at 85% -8%, rgba(224, 178, 90, 0.08), transparent 60%),
-      radial-gradient(ellipse 80% 60% at -10% 90%, rgba(110, 29, 42, 0.42), transparent 65%),
-      linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 55%, var(--bg-3) 100%);
+      radial-gradient(ellipse 60% 40% at 90% -10%, rgba(224, 178, 90, 0.06), transparent 60%),
+      radial-gradient(ellipse 70% 50% at -5% 100%, rgba(110, 29, 42, 0.35), transparent 60%),
+      linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 60%, var(--bg-3) 100%);
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    font-feature-settings: "ss01", "cv11";
   }
   img { display: block; max-width: 100%; }
   a { color: inherit; text-decoration: none; }
   button, input, select, textarea { font: inherit; color: inherit; }
   input, select, textarea { -webkit-appearance: none; appearance: none; }
-  @media (max-width: 1023px) {
-    button, a.primary-button, a.secondary-button { min-height: 44px; }
-  }
   #root { min-height: 100vh; position: relative; z-index: 1; }
+}
+
+@layer components {
+  .page-shell { @apply min-h-screen; }
+  .shell-container { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+  .section { @apply mt-10 sm:mt-12 lg:mt-16; }
+
+  /* Card surfaces — solid, not glass-blurred. Less noise, more substance. */
+  .card {
+    @apply rounded-2xl border border-[var(--line)] bg-[var(--panel-2)];
+  }
+  .card-soft {
+    @apply rounded-xl border border-[var(--line)] bg-[var(--panel)];
+  }
+  .card-glass {
+    @apply rounded-2xl border border-[var(--line-strong)] bg-[var(--panel-3)]/80;
+  }
+
+  /* Display type — Bebas Neue, condensed, dramatic */
+  .display-heading {
+    @apply font-display leading-[0.95] tracking-[0.01em] text-[var(--text)];
+  }
+  .display-accent { color: var(--accent); }
+
+  /* Eyebrows and labels */
+  .eyebrow {
+    @apply font-mono text-[0.62rem] font-bold uppercase tracking-[0.28em] text-[var(--accent)];
+  }
+  .eyebrow-muted {
+    @apply font-mono text-[0.6rem] font-bold uppercase tracking-[0.26em] text-[var(--muted-2)];
+  }
+
+  /* Form primitives */
+  .field-label {
+    @apply mb-1.5 block font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--muted-2)];
+  }
+  .field-input,
+  .field-select,
+  .field-textarea {
+    @apply w-full rounded-lg border border-[var(--line)] bg-[var(--bg-3)] px-3.5 py-3 text-[0.95rem] text-[var(--text)] shadow-sm outline-none transition placeholder:text-[var(--muted-2)] placeholder:italic focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(224,178,90,0.18)];
+  }
+  .field-textarea { @apply min-h-[88px] resize-y; }
+  .field-select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%23e0b25a' stroke-width='1.5' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    background-size: 10px 6px;
+    padding-right: 2.5rem;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[#1a0c10] transition hover:bg-[var(--accent-hover)] hover:shadow-[0_0_24px_rgba(224,178,90,0.32)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[var(--line-strong)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[rgba(224,178,90,0.06)] active:translate-y-px;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--accent)];
+  }
+
+  /* Tag/chip */
+  .tag {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-[rgba(224,178,90,0.30)] bg-[rgba(224,178,90,0.07)] px-3 py-1 font-mono text-[0.6rem] font-bold uppercase tracking-[0.22em] text-[var(--accent)];
+  }
+
+  /* Logo sizing — image is naturally a 1:1 square seal. */
+  .logo {
+    @apply h-12 w-12 sm:h-14 sm:w-14;
+    object-fit: contain;
+  }
+  .logo-lg {
+    @apply h-20 w-20 sm:h-24 sm:w-24;
+    object-fit: contain;
+  }
+
+  /* Numeric stat */
+  .stat-numeral {
+    @apply font-display text-5xl leading-none tracking-[0.005em] text-[var(--accent)];
+  }
+
+  .divider { @apply border-t border-[var(--line)]; }
+
+  /* Soft glow blob used in hero sections */
+  .hero-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* Mobile action bar */
+  .mobile-action-bar {
+    @apply fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line-strong)] bg-[rgba(12,6,8,0.95)] px-4 py-3 backdrop-blur lg:hidden;
+  }
+
+  /* Sidebar group label */
+  .nav-group-label {
+    @apply px-3 pb-1.5 pt-3 font-mono text-[0.55rem] font-bold uppercase tracking-[0.3em] text-[var(--muted-2)];
+  }
+  .nav-group-label:first-child { @apply pt-0; }
 }
