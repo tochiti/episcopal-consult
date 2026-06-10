@@ -1,27 +1,11 @@
 /* ---------------------------------------------------------------------------
-   Anglican Church of Nigeria — Ecclesiastical titles & administrative mapping.
-   Source-of-truth best-effort based on the Church of Nigeria's published
-   province/diocese structure. Each diocese belongs to one province; the
-   registration form cascades diocese choices from the chosen province.
+   Anglican Church of Nigeria — administrative mapping.
+   14 provinces × 176 dioceses (per Church of Nigeria records).
+   Each diocese is locked to its province. The registration form cascades
+   diocese choices from the chosen province. Selecting "Other" exposes a
+   free-text input for the diocese.
    --------------------------------------------------------------------------- */
 
-export const TITLE_OPTIONS = [
-  { value: 'His Grace, The Most Rev.', short: 'Most Rev.', group: 'Archbishop' },
-  { value: 'His Lordship, The Rt. Rev.', short: 'Rt. Rev.', group: 'Bishop' },
-  { value: 'The Very Rev.', short: 'Very Rev.', group: 'Clergy' },
-  { value: 'The Ven.', short: 'Ven.', group: 'Clergy' },
-  { value: 'The Rev. Canon', short: 'Rev. Canon', group: 'Clergy' },
-  { value: 'The Rev.', short: 'Rev.', group: 'Clergy' },
-  { value: 'Dr.', short: 'Dr.', group: 'Lay' },
-  { value: 'Prof.', short: 'Prof.', group: 'Lay' },
-  { value: 'Mr.', short: 'Mr.', group: 'Lay' },
-  { value: 'Mrs.', short: 'Mrs.', group: 'Lay' },
-  { value: 'Ms.', short: 'Ms.', group: 'Lay' },
-];
-
-export const TITLE_VALUES = TITLE_OPTIONS.map((t) => t.value);
-
-/* Province → dioceses. Best-effort, reviewed against Church of Nigeria structure. */
 export const PROVINCE_DIOCESE_MAP = {
   'Province of Aba': [
     'Aba',
@@ -112,6 +96,7 @@ export const PROVINCE_DIOCESE_MAP = {
     'Katsina',
     'Kebbi',
     'Kwoi',
+    'Sokoto',
     'Southern Kaduna Missionary Diocese',
     'Wusasa',
     'Zaria',
@@ -143,6 +128,7 @@ export const PROVINCE_DIOCESE_MAP = {
     'Yewa',
   ],
   'Province of Lokoja': [
+    'Evo',
     'Idah',
     'Ijumu',
     'Kabba',
@@ -152,15 +138,21 @@ export const PROVINCE_DIOCESE_MAP = {
   ],
   'Province of Niger': [
     'Bida',
+    'Doko',
     'Kontagora',
     'Kutigi',
     'Minna',
     'New Bussa',
+    'Niger West',
   ],
   'Province of Niger Delta': [
     'Ahoada',
     'Bari',
+    'Calabar',
+    'Diocese on the Coast',
+    'Eket',
     'Etche',
+    'Ikom',
     'Ikwerre',
     'Kalabari',
     'Ndokwa',
@@ -170,11 +162,13 @@ export const PROVINCE_DIOCESE_MAP = {
     'Ogbaru',
     'Ogbia',
     'Ogoni',
+    'Ogoja',
     'Ohaji/Egbema',
     'Okrika',
     'Omoku',
     'On the Lake',
     'On the Niger',
+    'Uyo',
   ],
   'Province of Ondo': [
     'Akoko',
@@ -188,8 +182,8 @@ export const PROVINCE_DIOCESE_MAP = {
     'Idanre',
     'Ijesa North East',
     'Ijesha North',
+    'Ilaje',
     'Ile-Oluji',
-    'Ilesa',
     'Irele-Eseodo',
     'Ondo',
     'Owo',
@@ -200,13 +194,12 @@ export const PROVINCE_DIOCESE_MAP = {
     'Awka',
     'Egbu',
     'Ideato',
-    'Ihedioranma',
     'Ihiala',
     'Ikeduru',
+    'Ikka',
     'Mbaise',
     'Mbamili',
     'Nnewi',
-    'Ogbaru',
     'Okigwe',
     'Okigwe North',
     'Okigwe South',
@@ -217,30 +210,19 @@ export const PROVINCE_DIOCESE_MAP = {
   ],
 };
 
-export const PROVINCE_OPTIONS = Object.keys(PROVINCE_DIOCESE_MAP);
+/* "Other (specify)" is appended programmatically so users can type a diocese
+   that doesn't appear in the official list. The same applies to provinces —
+   selecting "Other" surfaces a free-text input. */
+export const PROVINCE_OPTIONS = [
+  ...Object.keys(PROVINCE_DIOCESE_MAP),
+  'Other (specify)',
+];
 
 export const getDiocesesForProvince = (province) => {
   if (!province) return [];
+  if (province === 'Other (specify)') return [];
   return PROVINCE_DIOCESE_MAP[province] || [];
 };
-
-/* "Other affiliation" suggestions — non-diocesan bodies often represented at
-   Episcopal Consultations. Free-text field accepts any value; this list
-   is just for datalist suggestions. */
-export const AFFILIATION_SUGGESTIONS = [
-  'Church of Nigeria Headquarters',
-  'Vining College of Theology',
-  'Crowther Graduate School of Theology',
-  'Ajayi Crowther University',
-  'Providence University',
-  'Bishop on the Lakes',
-  'Anglican Consultative Council',
-  'Global Anglican Future Conference (GAFCON)',
-  'Diocesan Board / Secretariat',
-  "Spouse of Bishop",
-  'Chancellor / Legal Adviser',
-  'Personal Aide',
-];
 
 /* Travel & transport enums */
 export const TRAVEL_MODES = [
@@ -252,4 +234,12 @@ export const TRAVEL_MODES = [
 export const YES_NO = [
   { value: 'No', label: 'No' },
   { value: 'Yes', label: 'Yes' },
+];
+
+/* VIP/protocol levels — used by the protocol briefing page. */
+export const VIP_LEVELS = [
+  { value: 'regular', label: 'Delegate', description: 'Standard delegate' },
+  { value: 'dignitary', label: 'Dignitary', description: 'Senior cleric or honoured guest' },
+  { value: 'archbishop', label: 'Archbishop / Primate', description: 'Primate or Archbishop — highest protocol' },
+  { value: 'special', label: 'Special Guest', description: 'Lay leader, faculty, honoured visitor' },
 ];

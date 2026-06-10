@@ -1,12 +1,17 @@
 /* ---------------------------------------------------------------------------
    Episcopal Consult DNDN — registration helpers.
-   Field model:
-     firstName, lastName, title, position, otherAffiliation,
-     province, diocese, whatsappNumber, emailAddress, emailAddressNormalized,
-     dateOfArrival, modeOfTravel, requireInternalTransport, comingWithDriverEscort,
-     driverName, driverPhoneNumber, escortName, escortPhoneNumber,
-     passportPhoto (data URL), passportMime, passportSizeBytes,
-     status, batchId, createdAt
+   Field model on each delegate document:
+     - Identity:        title, firstName, lastName, position
+     - Geography:       province, diocese, dioceseOther
+     - Contact:         whatsappNumber, emailAddress, emailAddressNormalized
+     - Travel:          dateOfArrival, modeOfTravel, requireInternalTransport,
+                        comingWithDriverEscort, driverName, driverPhoneNumber,
+                        escortName, escortPhoneNumber
+     - Accreditation:   passportPhoto (data URL), passportMime, passportSizeBytes
+     - Operations:      accommodationId, roomNumber, checkInDate, checkOutDate,
+                        transportId, pickupConfirmed
+     - Protocol:        vipLevel, dietaryRequirements, specialNeeds, protocolNotes
+     - Meta:            status, batchId, createdAt
    --------------------------------------------------------------------------- */
 
 export const DNDN_FACTS = {
@@ -18,14 +23,15 @@ export const DNDN_FACTS = {
   city: 'Port Harcourt',
   state: 'Rivers State',
   country: 'Nigeria',
+  copyright: 'DNDN 2026',
 };
 
 export const normalizeStatus = (status) => status || 'Pending';
 
 export const formatDate = (value) => {
-  if (!value) return 'Not provided';
+  if (!value) return '—';
   const date = value?.toDate ? value.toDate() : new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Not provided';
+  if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'short',
@@ -34,9 +40,9 @@ export const formatDate = (value) => {
 };
 
 export const formatDateTime = (value) => {
-  if (!value) return 'Not recorded';
+  if (!value) return '—';
   const date = value?.toDate ? value.toDate() : new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Not recorded';
+  if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleString(undefined, {
     day: 'numeric',
     month: 'short',
@@ -64,6 +70,12 @@ export const composeFullName = (r) => {
   return `${title}${name}`.trim();
 };
 
+export const composeDiocese = (r) => {
+  if (!r) return '';
+  if (r.province === 'Other (specify)' && r.dioceseOther) return r.dioceseOther;
+  return r.diocese || '';
+};
+
 /* ---------------------------------------------------------------------------
    CSV export — column order matches what an event secretariat would import
    into Excel or a delegate management system.
@@ -73,9 +85,8 @@ export const REGISTRATION_EXPORT_COLUMNS = [
   { key: 'firstName', label: 'First Name' },
   { key: 'lastName', label: 'Surname' },
   { key: 'position', label: 'Position / Role' },
-  { key: 'otherAffiliation', label: 'Other Affiliation' },
   { key: 'province', label: 'Province' },
-  { key: 'diocese', label: 'Diocese' },
+  { key: 'diocese', label: 'Diocese', format: (row) => composeDiocese(row) },
   { key: 'whatsappNumber', label: 'WhatsApp Number' },
   { key: 'emailAddress', label: 'Email Address' },
   { key: 'dateOfArrival', label: 'Date of Arrival', format: (row) => formatDate(row.dateOfArrival) },
@@ -87,6 +98,15 @@ export const REGISTRATION_EXPORT_COLUMNS = [
   { key: 'escortName', label: 'Escort Name' },
   { key: 'escortPhoneNumber', label: 'Escort Phone' },
   { key: 'passportPhoto', label: 'Passport Photo', format: (row) => (row.passportPhoto ? 'Attached' : 'Not attached') },
+  { key: 'vipLevel', label: 'Protocol Level' },
+  { key: 'dietaryRequirements', label: 'Dietary' },
+  { key: 'specialNeeds', label: 'Special Needs' },
+  { key: 'accommodationId', label: 'Hotel' },
+  { key: 'roomNumber', label: 'Room' },
+  { key: 'checkInDate', label: 'Check-in', format: (row) => formatDate(row.checkInDate) },
+  { key: 'checkOutDate', label: 'Check-out', format: (row) => formatDate(row.checkOutDate) },
+  { key: 'transportId', label: 'Pickup assigned' },
+  { key: 'pickupConfirmed', label: 'Pickup confirmed' },
   { key: 'status', label: 'Status', format: (row) => normalizeStatus(row.status) },
   { key: 'createdAt', label: 'Registration Date', format: (row) => formatDateTime(row.createdAt) },
 ];
@@ -125,10 +145,11 @@ export const summarizeRegistrations = (registrations) => {
   const withEscort = registrations.filter((r) => r.comingWithDriverEscort === 'Yes').length;
   const withPassport = registrations.filter((r) => Boolean(r.passportPhoto)).length;
   const withoutPassport = total - withPassport;
-  const archbishopCount = registrations.filter((r) => (r.title || '').includes('Most Rev')).length;
-  const bishopCount = registrations.filter((r) => (r.title || '').includes('Rt. Rev')).length;
-  const clergyCount = registrations.filter((r) => (r.title || '').startsWith('The Rev') || (r.title || '').startsWith('The Ven') || (r.title || '').startsWith('The Very Rev')).length;
-  const layCount = registrations.filter((r) => ['Dr.', 'Prof.', 'Mr.', 'Mrs.', 'Ms.'].some((t) => (r.title || '').startsWith(t))).length;
+  const withAccommodation = registrations.filter((r) => r.accommodationId).length;
+  const withTransport = registrations.filter((r) => r.transportId).length;
+  const archbishopCount = registrations.filter((r) => (r.vipLevel || '') === 'archbishop').length;
+  const dignitaryCount = registrations.filter((r) => (r.vipLevel || '') === 'dignitary').length;
+  const specialCount = registrations.filter((r) => (r.vipLevel || '') === 'special').length;
 
   const statusChart = [
     { name: 'Approved', count: approved, fill: '#5fb98a' },
@@ -136,7 +157,6 @@ export const summarizeRegistrations = (registrations) => {
     { name: 'Declined', count: declined, fill: '#e57787' },
   ];
 
-  /* Province distribution */
   const provinceCounts = registrations.reduce((acc, r) => {
     const k = r.province || 'Unspecified';
     acc[k] = (acc[k] || 0) + 1;
@@ -147,9 +167,8 @@ export const summarizeRegistrations = (registrations) => {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-  /* Diocese distribution (top N) */
   const dioceseCounts = registrations.reduce((acc, r) => {
-    const k = r.diocese || 'Unspecified';
+    const k = composeDiocese(r) || 'Unspecified';
     acc[k] = (acc[k] || 0) + 1;
     return acc;
   }, {});
@@ -157,7 +176,6 @@ export const summarizeRegistrations = (registrations) => {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-  /* Travel modes */
   const travelModeCounts = registrations.reduce(
     (acc, r) => {
       const k = r.modeOfTravel || 'Unspecified';
@@ -170,7 +188,6 @@ export const summarizeRegistrations = (registrations) => {
     .filter(([, v]) => v > 0)
     .map(([name, value]) => ({ name, value }));
 
-  /* Arrival timeline */
   const arrivalMap = registrations.reduce((acc, r) => {
     if (!r.dateOfArrival) return acc;
     const sortKey = new Date(r.dateOfArrival).getTime();
@@ -186,7 +203,6 @@ export const summarizeRegistrations = (registrations) => {
     .sort((a, b) => a.sortKey - b.sortKey)
     .slice(-14);
 
-  /* Status by province (matrix) */
   const provinceStatusMatrix = {};
   registrations.forEach((r) => {
     const p = r.province || 'Unspecified';
@@ -200,7 +216,6 @@ export const summarizeRegistrations = (registrations) => {
     provinceStatusMatrix[p].total += 1;
   });
 
-  /* Transport demand by province */
   const transportByProvince = registrations.reduce((acc, r) => {
     const p = r.province || 'Unspecified';
     if (!acc[p]) acc[p] = { province: p, transport: 0, escort: 0, total: 0 };
@@ -210,7 +225,6 @@ export const summarizeRegistrations = (registrations) => {
     return acc;
   }, {});
 
-  /* Grouped arrival slots — for the host team's transport planning */
   const arrivalSlots = arrivalTimeline.map((slot) => ({
     ...slot,
     approved: registrations.filter(
@@ -231,13 +245,10 @@ export const summarizeRegistrations = (registrations) => {
       withEscort,
       withPassport,
       withoutPassport,
+      withAccommodation,
+      withTransport,
     },
-    titles: {
-      archbishop: archbishopCount,
-      bishop: bishopCount,
-      clergy: clergyCount,
-      lay: layCount,
-    },
+    vip: { archbishop: archbishopCount, dignitary: dignitaryCount, special: specialCount, regular: total - archbishopCount - dignitaryCount - specialCount },
     statusChart,
     provinceChart,
     provinceStatusMatrix: Object.values(provinceStatusMatrix).sort((a, b) => b.total - a.total),
@@ -250,7 +261,7 @@ export const summarizeRegistrations = (registrations) => {
 };
 
 /* Filters — return a predicate that the admin list can use. */
-export const buildRegistrationFilter = ({ query, province, status, travelMode, needsTransport, hasPassport, arrivalDate }) => {
+export const buildRegistrationFilter = ({ query, province, status, travelMode, needsTransport, hasPassport, arrivalDate, vipLevel }) => {
   return (r) => {
     if (query) {
       const q = query.trim().toLowerCase();
@@ -260,11 +271,12 @@ export const buildRegistrationFilter = ({ query, province, status, travelMode, n
           r.lastName,
           r.title,
           r.position,
-          r.otherAffiliation,
-          r.diocese,
+          composeDiocese(r),
           r.province,
           r.emailAddress,
           r.whatsappNumber,
+          r.driverName,
+          r.escortName,
         ]
           .filter(Boolean)
           .join(' ')
@@ -280,23 +292,7 @@ export const buildRegistrationFilter = ({ query, province, status, travelMode, n
     if (hasPassport === 'yes' && !r.passportPhoto) return false;
     if (hasPassport === 'no' && r.passportPhoto) return false;
     if (arrivalDate && r.dateOfArrival !== arrivalDate) return false;
+    if (vipLevel && (r.vipLevel || 'regular') !== vipLevel) return false;
     return true;
-  };
-};
-
-/* Build a printable / reportable text block from a set of registrations. */
-export const buildPlanningReport = (registrations, { generatedBy = 'Secretariat', eventName = 'Episcopal Consultation' } = {}) => {
-  const a = summarizeRegistrations(registrations);
-  const stamp = formatDateTime(new Date());
-  return {
-    title: `${eventName} — Planning Report`,
-    generatedAt: stamp,
-    generatedBy,
-    summary: a.totals,
-    titles: a.titles,
-    provinces: a.provinceStatusMatrix,
-    transport: a.transportByProvince,
-    arrivalSlots: a.arrivalSlots,
-    travelModes: a.travelModes,
   };
 };

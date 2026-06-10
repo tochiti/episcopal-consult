@@ -16,9 +16,7 @@ import PublicFooter from '../components/PublicFooter';
 import PassportUpload from '../components/PassportUpload';
 import { composeFullName, DNDN_FACTS } from '../lib/registrations';
 import {
-  AFFILIATION_SUGGESTIONS,
   PROVINCE_OPTIONS,
-  TITLE_OPTIONS,
   TRAVEL_MODES,
   YES_NO,
   getDiocesesForProvince,
@@ -29,9 +27,9 @@ const emptyDelegate = () => ({
   firstName: '',
   lastName: '',
   position: '',
-  otherAffiliation: '',
   province: '',
   diocese: '',
+  dioceseOther: '',
   whatsappNumber: '',
   emailAddress: '',
   dateOfArrival: '',
@@ -50,20 +48,22 @@ const emptyDelegate = () => ({
   passportFileName: '',
 });
 
-const isDelegateComplete = (d) =>
-  Boolean(
+const isDelegateComplete = (d) => {
+  const baseOk = Boolean(
     d.title &&
       d.firstName &&
       d.lastName &&
       d.position &&
       d.province &&
-      d.diocese &&
+      (d.province === 'Other (specify)' ? d.dioceseOther : d.diocese) &&
       d.whatsappNumber &&
       d.emailAddress &&
       d.dateOfArrival &&
       d.modeOfTravel &&
       d.passportPhoto
   );
+  return baseOk;
+};
 
 export default function RegistrationForm() {
   const [delegates, setDelegates] = useState([emptyDelegate()]);
@@ -82,7 +82,7 @@ export default function RegistrationForm() {
   };
 
   const onProvinceChange = (province) => {
-    updateActive({ province, diocese: '' });
+    updateActive({ province, diocese: '', dioceseOther: '' });
   };
 
   const addDelegate = () => {
@@ -137,7 +137,6 @@ export default function RegistrationForm() {
     }
   };
 
-  /* ---------- SUCCESS VIEW ---------- */
   if (view === 'success' && submittedBatch) {
     return (
       <SuccessView
@@ -152,7 +151,6 @@ export default function RegistrationForm() {
     );
   }
 
-  /* ---------- PREVIEW VIEW ---------- */
   if (view === 'preview') {
     return (
       <PreviewView
@@ -169,7 +167,6 @@ export default function RegistrationForm() {
     );
   }
 
-  /* ---------- FORM VIEW ---------- */
   return (
     <div className="page-shell relative pb-32 lg:pb-12">
       <div className="shell-container relative z-10 max-w-6xl py-8 sm:py-10">
@@ -179,7 +176,7 @@ export default function RegistrationForm() {
               <ArrowLeft className="h-4 w-4" /> Back to homepage
             </Link>
             <p className="eyebrow mt-5">Delegate registration</p>
-            <h1 className="display-heading mt-2 text-4xl leading-[0.95] text-[var(--text)] sm:text-5xl lg:text-6xl">
+            <h1 className="display-heading mt-2 text-4xl leading-[1.02] text-[var(--text)] sm:text-5xl lg:text-6xl">
               Submit your <span className="display-yellow">details.</span>
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)] sm:text-base">
@@ -217,7 +214,6 @@ export default function RegistrationForm() {
         </div>
       </div>
 
-      {/* Mobile sticky action bar */}
       <div className="mobile-action-bar">
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           <button
@@ -233,19 +229,18 @@ export default function RegistrationForm() {
             disabled={loading}
             className="primary-button flex-1 px-3 py-2.5 text-xs sm:text-sm"
           >
-            <Eye className="h-4 w-4" /> Preview & submit
+            <Eye className="h-4 w-4" /> Preview &amp; submit
           </button>
         </div>
       </div>
 
-      {/* Desktop action row */}
       <div className="shell-container relative z-10 mt-8 hidden lg:block">
         <div className="flex items-center justify-end gap-3">
           <button type="button" onClick={() => addDelegate()} className="secondary-button">
             <Plus className="h-4 w-4" /> Add another delegate
           </button>
           <button type="button" onClick={goToPreview} disabled={loading} className="primary-button">
-            <Eye className="h-4 w-4" /> Preview & submit
+            <Eye className="h-4 w-4" /> Preview &amp; submit
           </button>
         </div>
       </div>
@@ -253,9 +248,6 @@ export default function RegistrationForm() {
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* DELEGATE STRIP                                                             */
-/* ------------------------------------------------------------------------- */
 function DelegateStrip({ delegates, activeIdx, onSelect, onAdd, onRemove, onClearAll }) {
   return (
     <div className="surface-glass mt-6 flex items-center gap-2 overflow-x-auto px-3 py-2.5">
@@ -318,12 +310,10 @@ function DelegateStrip({ delegates, activeIdx, onSelect, onAdd, onRemove, onClea
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* DELEGATE FORM                                                              */
-/* ------------------------------------------------------------------------- */
 function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
   const handle = (field) => (event) => onChange({ [field]: event.target.value });
   const dioceseOptions = useMemo(() => getDiocesesForProvince(delegate.province), [delegate.province]);
+  const isOtherProvince = delegate.province === 'Other (specify)';
 
   return (
     <main className="surface-glass p-5 sm:p-8 lg:p-10">
@@ -336,19 +326,15 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
       <form className="space-y-8" onSubmit={(event) => event.preventDefault()}>
         <Section title="Identity" no="01" description="Title, name, and the office the delegate holds.">
           <Field label="Title" required>
-            <select
+            <input
+              type="text"
               value={delegate.title}
               onChange={handle('title')}
               required
-              className="field-select"
-            >
-              <option value="">Select title</option>
-              {TITLE_OPTIONS.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+              autoComplete="honorific-prefix"
+              placeholder="Most Rev. and Rt. Rev."
+              className="field-input"
+            />
           </Field>
 
           <Field label="First Name" required>
@@ -385,25 +371,9 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
               className="field-input"
             />
           </Field>
-
-          <Field label="Other Affiliation" hint="Use this if the delegate is from a body that is not a diocese — Vining College of Theology, the Church of Nigeria Headquarters, etc.">
-            <input
-              type="text"
-              value={delegate.otherAffiliation}
-              onChange={handle('otherAffiliation')}
-              list="affiliation-suggestions"
-              placeholder="Vining College of Theology"
-              className="field-input"
-            />
-            <datalist id="affiliation-suggestions">
-              {AFFILIATION_SUGGESTIONS.map((a) => (
-                <option key={a} value={a} />
-              ))}
-            </datalist>
-          </Field>
         </Section>
 
-        <Section title="Province & Diocese" no="02" description="Select the province first — only dioceses belonging to that province are offered.">
+        <Section title="Province & Diocese" no="02" description="Select the province first. Choose Other (specify) to type in a diocese that isn't listed.">
           <Field label="Province" required>
             <select
               value={delegate.province}
@@ -413,29 +383,40 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
             >
               <option value="">Select province</option>
               {PROVINCE_OPTIONS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
+                <option key={p} value={p}>{p}</option>
               ))}
             </select>
           </Field>
 
-          <Field label="Diocese" required hint={!delegate.province ? 'Choose a province first.' : null}>
-            <select
-              value={delegate.diocese}
-              onChange={handle('diocese')}
-              required
-              disabled={!delegate.province}
-              className="field-select disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">{delegate.province ? 'Select diocese' : '— select province first —'}</option>
-              {dioceseOptions.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {isOtherProvince ? (
+            <Field label="Diocese" required hint="Type the diocese or body you represent.">
+              <input
+                type="text"
+                value={delegate.dioceseOther}
+                onChange={handle('dioceseOther')}
+                required
+                placeholder="e.g. Diocese of…"
+                className="field-input"
+              />
+            </Field>
+          ) : (
+            <Field label="Diocese" required hint={!delegate.province ? 'Choose a province first.' : null}>
+              <select
+                value={delegate.diocese}
+                onChange={handle('diocese')}
+                required
+                disabled={!delegate.province}
+                className="field-select disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">{delegate.province ? 'Select diocese' : '— select province first —'}</option>
+                {dioceseOptions.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
         </Section>
 
         <Section title="Contact" no="03" description="The secretariat will use these for all correspondence.">
@@ -592,9 +573,6 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* SECTION + FIELD                                                            */
-/* ------------------------------------------------------------------------- */
 function Section({ title, description, no, children }) {
   return (
     <section className="border-b border-[var(--line)] pb-7 last:border-b-0 last:pb-0">
@@ -622,9 +600,6 @@ function Field({ label, required, hint, children }) {
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* SIDEBAR                                                                    */
-/* ------------------------------------------------------------------------- */
 function FormSidebar() {
   return (
     <aside className="hidden space-y-4 lg:block">
@@ -637,7 +612,7 @@ function FormSidebar() {
           </li>
           <li className="flex gap-2.5">
             <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--accent)]" />
-            Province and diocese (or other affiliation for non-diocesan delegates).
+            Province and diocese.
           </li>
           <li className="flex gap-2.5">
             <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--accent)]" />
@@ -672,9 +647,6 @@ function FormSidebar() {
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* PREVIEW VIEW                                                               */
-/* ------------------------------------------------------------------------- */
 function PreviewView({ delegates, onEdit, onBack, onSubmit, loading, error }) {
   return (
     <div className="page-shell relative pb-32">
@@ -683,7 +655,7 @@ function PreviewView({ delegates, onEdit, onBack, onSubmit, loading, error }) {
           <ArrowLeft className="h-4 w-4" /> Back to form
         </button>
         <p className="eyebrow mt-5">Step 2 of 2</p>
-        <h1 className="display-heading mt-2 text-3xl leading-[0.95] text-[var(--text)] sm:text-4xl lg:text-5xl">
+        <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
           Review your <span className="display-yellow">delegation.</span>
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)]">
@@ -739,9 +711,8 @@ function PreviewCard({ delegate, index, onEdit }) {
     ['Title', delegate.title || '—'],
     ['Name', [delegate.firstName, delegate.lastName].filter(Boolean).join(' ') || '—'],
     ['Position', delegate.position || '—'],
-    ['Other affiliation', delegate.otherAffiliation || '—'],
     ['Province', delegate.province || '—'],
-    ['Diocese', delegate.diocese || '—'],
+    ['Diocese', delegate.province === 'Other (specify)' ? delegate.dioceseOther || '—' : delegate.diocese || '—'],
     ['WhatsApp', delegate.whatsappNumber || '—'],
     ['Email', delegate.emailAddress || '—'],
     ['Date of arrival', delegate.dateOfArrival || '—'],
@@ -804,13 +775,10 @@ function Row({ k, v }) {
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* SUCCESS VIEW                                                               */
-/* ------------------------------------------------------------------------- */
 function SuccessView({ batch, onAnother }) {
   return (
     <div className="page-shell relative">
-      <div className="shell-container relative z-10 max-w-4xl py-10 sm:py-14">
+      <div className="shell-container relative z-10 max-w-3xl py-10 sm:py-14">
         <div className="surface-glass p-6 sm:p-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] px-3.5 py-1.5">
             <CheckCircle2 className="h-4 w-4 text-[var(--ok)]" />
@@ -818,35 +786,51 @@ function SuccessView({ batch, onAnother }) {
               {batch.count === 1 ? 'Registration submitted' : `${batch.count} delegates submitted`}
             </span>
           </div>
-          <h1 className="display-heading mt-5 text-4xl leading-[0.95] sm:text-5xl">
-            Thank you. <span className="display-yellow">Your registration is in.</span>
+          <h1 className="display-heading mt-5 text-3xl leading-[1.05] sm:text-4xl">
+            Your registration is in.
           </h1>
           {batch.batchId && batch.batchId !== 'SINGLE' ? (
-            <p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+            <p className="mt-3 font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
               Batch reference: <span className="text-[var(--accent)]">{batch.batchId}</span>
             </p>
           ) : null}
 
-          <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)]">
-            The secretariat of the {DNDN_FACTS.name} will review the submission and update the status to <em>Approved</em> once
-            accreditation is confirmed. You can check the status at any time using the email used during registration.
-          </p>
+          <div className="mt-6 space-y-4 text-[15px] leading-7 text-[var(--muted)]">
+            <p>Your Grace / Your Lordship,</p>
+            <p>
+              Thank you so much for taking the time to share your details for the Church of Nigeria Episcopal Consultation. We
+              truly appreciate your quick response and cooperation. Your information has been received with gratitude and will
+              help us a lot as we prepare for the Consultation.
+            </p>
+            <p>
+              We will share more details soon about accreditation, accommodation, transportation, protocol arrangements, and
+              other logistics.
+            </p>
+            <p>If you need any help or further information, please feel free to reach out to:</p>
+            <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4">
+              <p className="font-semibold text-[var(--text)]">Rev. Canon Gideon Genka</p>
+              <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08060821822</p>
+              <p className="mt-3 font-semibold text-[var(--text)]">Engr. Edwin Amadi</p>
+              <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08036716352</p>
+            </div>
+            <p>
+              We&apos;re excited to welcome Your Grace/Your Lordship to the {DNDN_FACTS.name}. May the Lord continue to strengthen
+              and bless your ministry.
+            </p>
+            <div className="pt-2">
+              <p>Warmest regards,</p>
+              <p className="mt-1 font-semibold text-[var(--text)]">Episcopal Consultation Planning Committee</p>
+              <p>{DNDN_FACTS.name} (DNDN)</p>
+            </div>
+          </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-5">
-              <p className="eyebrow">Need to check status?</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Use the same email to look up the record.</p>
-              <Link to="/dashboard" className="primary-button mt-4">
-                Open status dashboard <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-5">
-              <p className="eyebrow">Need to add more delegates?</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Start a fresh batch — independent of this one.</p>
-              <button type="button" onClick={onAnother} className="secondary-button mt-4">
-                <Plus className="h-4 w-4" /> New registration
-              </button>
-            </div>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <Link to="/dashboard" className="secondary-button justify-center">
+              Look up status
+            </Link>
+            <button type="button" onClick={onAnother} className="primary-button justify-center">
+              <Plus className="h-4 w-4" /> New registration
+            </button>
           </div>
         </div>
       </div>

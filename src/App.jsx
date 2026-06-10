@@ -10,6 +10,11 @@ const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
 const AdminRegistrations = lazy(() => import('./pages/admin/AdminRegistrations'));
 const AdminRegistrationDetail = lazy(() => import('./pages/admin/AdminRegistrationDetail'));
+const AdminBadges = lazy(() => import('./pages/admin/AdminBadges'));
+const AdminAccommodation = lazy(() => import('./pages/admin/AdminAccommodation'));
+const AdminTransport = lazy(() => import('./pages/admin/AdminTransport'));
+const AdminProtocol = lazy(() => import('./pages/admin/AdminProtocol'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const Login = lazy(() => import('./pages/Login'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard'));
@@ -21,7 +26,7 @@ function ScreenLoader({ copy = 'Loading portal...' }) {
       <span className="hero-blob" style={{ bottom: '10%', right: '10%', width: 360, height: 360, background: 'radial-gradient(circle, rgba(110,29,42,0.55), transparent 70%)' }} aria-hidden />
       <div className="surface-glass relative z-10 w-full max-w-md p-8 text-center">
         <img src="/logo.png" alt="DNDN logo" className="mx-auto h-16 w-16 rounded-full bg-[var(--text)] p-1.5 shadow-sm" />
-        <p className="eyebrow mt-5">Episcopal Consult DNDN</p>
+        <p className="eyebrow mt-5">DNDN 2026</p>
         <h1 className="display-heading mt-3 text-4xl">{copy}</h1>
         <div className="mx-auto mt-6 h-1 w-32 overflow-hidden rounded-full bg-[rgba(224,178,90,0.18)]">
           <div className="h-full w-1/2 animate-pulse rounded-full bg-[var(--accent)]" />
@@ -42,7 +47,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = 'Episcopal Consult DNDN';
+    document.title = 'Episcopal Consult DNDN · DNDN 2026';
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -69,6 +74,11 @@ function App() {
             <Route index element={<AdminOverview />} />
             <Route path="registrations" element={<AdminRegistrations />} />
             <Route path="registrations/:registrationId" element={<AdminRegistrationDetail />} />
+            <Route path="badges" element={<AdminBadges />} />
+            <Route path="accommodation" element={<AdminAccommodation />} />
+            <Route path="transport" element={<AdminTransport />} />
+            <Route path="protocol" element={<AdminProtocol />} />
+            <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>

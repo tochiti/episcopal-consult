@@ -14,7 +14,9 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-const COLLECTION_NAME = 'episcopal_consultation_registrations';
+export const COLLECTION_NAME = 'episcopal_consultation_registrations';
+export const ACCOMMODATIONS_COLLECTION = 'episcopal_consultation_accommodations';
+export const TRANSPORTS_COLLECTION = 'episcopal_consultation_transports';
 
 const trim = (v) => (typeof v === 'string' ? v.trim() : v);
 
@@ -23,9 +25,9 @@ const buildPayload = (data) => ({
   firstName: trim(data.firstName),
   lastName: trim(data.lastName),
   position: trim(data.position),
-  otherAffiliation: trim(data.otherAffiliation),
   province: trim(data.province),
   diocese: trim(data.diocese),
+  dioceseOther: trim(data.dioceseOther),
   whatsappNumber: trim(data.whatsappNumber),
   emailAddress: trim(data.emailAddress),
   emailAddressNormalized: trim(data.emailAddress || '').toLowerCase(),
@@ -40,6 +42,18 @@ const buildPayload = (data) => ({
   passportPhoto: data.passportPhoto || null,
   passportMime: data.passportMime || null,
   passportSizeBytes: data.passportSizeBytes || 0,
+  /* Operations */
+  accommodationId: data.accommodationId || null,
+  roomNumber: trim(data.roomNumber),
+  checkInDate: trim(data.checkInDate),
+  checkOutDate: trim(data.checkOutDate),
+  transportId: data.transportId || null,
+  pickupConfirmed: Boolean(data.pickupConfirmed),
+  /* Protocol */
+  vipLevel: data.vipLevel || 'regular',
+  dietaryRequirements: trim(data.dietaryRequirements),
+  specialNeeds: trim(data.specialNeeds),
+  protocolNotes: trim(data.protocolNotes),
   status: 'Pending',
   batchId: data.batchId || null,
   createdAt: serverTimestamp(),
@@ -56,7 +70,6 @@ export const saveRegistration = async (data) => {
   }
 };
 
-/* Multi-delegate batch save — single Firestore batch, shared batchId. */
 export const saveRegistrationBatch = async (delegates) => {
   if (!Array.isArray(delegates) || delegates.length === 0) {
     throw new Error('No delegates to save');
@@ -100,6 +113,20 @@ export const updateRegistrationStatus = async (id, status) => {
     await updateDoc(docRef, { status });
   } catch (e) {
     console.error('Error updating document: ', e);
+    throw e;
+  }
+};
+
+/* Partial update — used by the operations pages (badges, accommodation, etc.) */
+export const updateDelegate = async (id, patch) => {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const cleanPatch = Object.fromEntries(
+      Object.entries(patch).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])
+    );
+    await updateDoc(docRef, cleanPatch);
+  } catch (e) {
+    console.error('Error updating delegate: ', e);
     throw e;
   }
 };
@@ -152,4 +179,69 @@ export const deleteRegistration = async (id) => {
     console.error('Error deleting document: ', error);
     throw error;
   }
+};
+
+/* ---------------------------------------------------------------------------
+   Accommodation master list
+   --------------------------------------------------------------------------- */
+export const getAccommodations = async () => {
+  try {
+    const q = query(collection(db, ACCOMMODATIONS_COLLECTION), orderBy('name', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('Error getting accommodations: ', e);
+    throw e;
+  }
+};
+
+export const saveAccommodation = async (data) => {
+  const payload = {
+    name: trim(data.name),
+    address: trim(data.address),
+    contactPerson: trim(data.contactPerson),
+    contactPhone: trim(data.contactPhone),
+    totalRooms: Number(data.totalRooms) || 0,
+    notes: trim(data.notes),
+    createdAt: serverTimestamp(),
+  };
+  const ref = await addDoc(collection(db, ACCOMMODATIONS_COLLECTION), payload);
+  return { id: ref.id, ...payload };
+};
+
+export const deleteAccommodation = async (id) => {
+  await deleteDoc(doc(db, ACCOMMODATIONS_COLLECTION, id));
+};
+
+/* ---------------------------------------------------------------------------
+   Transport master list (vehicles / drivers)
+   --------------------------------------------------------------------------- */
+export const getTransports = async () => {
+  try {
+    const q = query(collection(db, TRANSPORTS_COLLECTION), orderBy('vehicleDescription', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('Error getting transports: ', e);
+    throw e;
+  }
+};
+
+export const saveTransport = async (data) => {
+  const payload = {
+    vehicleDescription: trim(data.vehicleDescription),
+    vehiclePlate: trim(data.vehiclePlate),
+    driverName: trim(data.driverName),
+    driverPhone: trim(data.driverPhone),
+    capacity: Number(data.capacity) || 1,
+    pickupLocation: trim(data.pickupLocation),
+    notes: trim(data.notes),
+    createdAt: serverTimestamp(),
+  };
+  const ref = await addDoc(collection(db, TRANSPORTS_COLLECTION), payload);
+  return { id: ref.id, ...payload };
+};
+
+export const deleteTransport = async (id) => {
+  await deleteDoc(doc(db, TRANSPORTS_COLLECTION, id));
 };
