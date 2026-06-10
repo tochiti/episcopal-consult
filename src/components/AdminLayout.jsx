@@ -20,8 +20,8 @@ import { deleteRegistration, getRegistrations, updateRegistrationStatus } from '
 import { PROGRAMME_DATES, summarizeRegistrations } from '../lib/registrations';
 
 /* Admin nav — all eight destinations in a single ordered list.
-   Reused by the top header pill (widescreen), the slide-in drawer
-   (mobile), and the mobile bottom nav. */
+   Reused by the desktop sidebar, the mobile slide-in drawer, and the
+   mobile bottom nav. */
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutGrid, end: true },
   { to: '/admin/registrations', label: 'Registrations', icon: Users },
@@ -132,9 +132,6 @@ export default function AdminLayout() {
         ? 'border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] text-[var(--ok)]'
         : 'border-[var(--line)] bg-[rgba(12,6,8,0.5)] text-[var(--muted)]';
 
-  const total = registrations.length;
-  const approved = registrations.filter((r) => (r.status || 'Pending') === 'Approved').length;
-
   return (
     <div className="page-shell relative">
       <span className="hero-blob" style={{ top: '8%', right: '-4%', width: 360, height: 360, background: 'radial-gradient(circle, rgba(224,178,90,0.08), transparent 70%)' }} aria-hidden />
@@ -142,9 +139,9 @@ export default function AdminLayout() {
       {/* ──────────────  FIXED TOP HEADER  ──────────────
           • Mobile: hamburger on the LEFT (drawer opens from left), logo +
             brand centred.
-          • Widescreen (lg+): logo + brand on the left, horizontally
-            scrollable pill nav centred, quick snapshot + sign-out on the
-            right. NO sidebar. */}
+          • Widescreen (lg+): logo + brand on the left, programme date +
+            quick snapshot + Export + sign-out on the right. NO inline nav —
+            the left sidebar carries navigation. */}
       <header className="admin-topbar fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 border-b border-[var(--line)] bg-[rgba(12,6,8,0.92)] backdrop-blur lg:h-16">
         {/* Mobile hamburger — LEFT side */}
         <button
@@ -173,41 +170,20 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        {/* Widescreen inline pill nav — centred, horizontally scrollable */}
-        <nav className="ml-3 hidden flex-1 items-center gap-1 overflow-x-auto py-1 lg:flex">
-          {adminNav.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `inline-flex flex-shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-semibold transition ${
-                  isActive
-                    ? 'bg-[var(--accent)] text-[#1a0c10] shadow-[0_0_18px_rgba(224,178,90,0.3)]'
-                    : 'text-[var(--muted)] hover:bg-[rgba(224,178,90,0.06)] hover:text-[var(--text-bright)]'
-                }`
-              }
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Widescreen right side — programme date + quick snapshot + sign out */}
-        <div className="ml-auto hidden items-center gap-3 pr-6 lg:flex">
-          <span className="font-mono text-[0.6rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">
+        {/* Widescreen right side — programme date + quick snapshot + export + sign out */}
+        <div className="ml-auto flex items-center gap-2 pr-4 lg:gap-3 lg:pr-6">
+          <span className="hidden font-mono text-[0.6rem] uppercase tracking-[0.22em] text-[var(--muted-2)] lg:inline-flex">
             {PROGRAMME_DATES.short}
           </span>
-          <div className="hidden items-center gap-2 rounded-full border border-[var(--line)] bg-[rgba(12,6,8,0.5)] px-3 py-1.5 xl:inline-flex">
+          <div className="hidden items-center gap-2 rounded-full border border-[var(--line)] bg-[rgba(12,6,8,0.5)] px-3 py-1.5 lg:inline-flex">
             <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[var(--muted-2)]">
-              {approved}/{total} approved
+              {analytics.approved}/{analytics.total} approved
             </span>
           </div>
           <button
             type="button"
             onClick={handleExportCSV}
-            className="secondary-button px-3 py-1.5 text-xs"
+            className="secondary-button hidden px-3 py-1.5 text-xs lg:inline-flex"
           >
             <Download className="h-3.5 w-3.5" /> Export
           </button>
@@ -220,10 +196,16 @@ export default function AdminLayout() {
             <LogOut className="h-4 w-4" />
           </button>
         </div>
-
-        {/* Mobile right spacer keeps the brand visually centred */}
-        <div className="ml-auto h-10 w-10 lg:hidden" aria-hidden />
       </header>
+
+      {/* ──────────────  DESKTOP LEFT SIDEBAR  ────────────── */}
+      <aside className="fixed left-0 top-16 z-20 hidden h-[calc(100vh-4rem)] w-64 border-r border-[var(--line)] bg-[rgba(12,6,8,0.7)] backdrop-blur lg:block">
+        <SidebarPanel
+          handleSignOut={handleSignOut}
+          handleExportCSV={handleExportCSV}
+          analytics={analytics}
+        />
+      </aside>
 
       {/* ──────────────  MOBILE SLIDE-IN DRAWER (from left)  ────────────── */}
       {drawerOpen ? (
@@ -280,9 +262,9 @@ export default function AdminLayout() {
             <div className="space-y-2 border-t border-[var(--line)] p-3">
               <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-3.5">
                 <p className="eyebrow">Quick snapshot</p>
-                <p className="display-heading mt-1 text-2xl text-[var(--accent)]">{total}</p>
+                <p className="display-heading mt-1 text-2xl text-[var(--accent)]">{analytics.total}</p>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted-2)]">
-                  {approved} approved · {total - approved} pending / declined
+                  {analytics.approved} approved · {analytics.total - analytics.approved} pending / declined
                 </p>
               </div>
               <button
@@ -304,8 +286,8 @@ export default function AdminLayout() {
       ) : null}
 
       {/* ──────────────  MAIN CONTENT  ──────────────
-          Full width — no left sidebar reservation on widescreen. */}
-      <main className="admin-main relative z-10 pt-14 lg:pt-16">
+          Widescreen gets pl-64 to clear the left sidebar. */}
+      <main className="admin-main relative z-10 pt-14 lg:pl-64 lg:pt-16">
         <div className="min-h-[calc(100vh-3.5rem)] pb-24 lg:min-h-[calc(100vh-4rem)] lg:pb-12">
           <div className="px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
             {message ? (
@@ -366,6 +348,61 @@ export default function AdminLayout() {
           <span>Menu</span>
         </button>
       </nav>
+    </div>
+  );
+}
+
+function SidebarPanel({ handleSignOut, handleExportCSV, analytics }) {
+  return (
+    <div className="flex h-full flex-col p-5">
+      <div className="flex items-center gap-3 pb-4">
+        <img src="/logo.png" alt="DNDN" className="h-10 w-10 rounded-full bg-[var(--text)] p-0.5 shadow-sm" />
+        <div>
+          <p className="font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">DNDN 2026</p>
+          <p className="font-display text-base leading-none text-[var(--text-bright)]">Secretariat</p>
+        </div>
+      </div>
+
+      {/* Decorative cross rule */}
+      <div className="my-4 flex items-center justify-center gap-2" aria-hidden>
+        <span className="h-px w-8 bg-[var(--line)]" />
+        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
+          <path d="M7 0v14M0 7h14" stroke="var(--accent)" strokeWidth="1" />
+        </svg>
+        <span className="h-px w-8 bg-[var(--line)]" />
+      </div>
+
+      <nav className="flex-1 space-y-3 overflow-y-auto">
+        <p className="nav-group-label">Operations</p>
+        <div className="space-y-1.5">
+          {adminNav.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition ${
+                  isActive
+                    ? 'border-[var(--accent)] bg-[var(--accent)] text-[#1a0c10] shadow-[0_0_18px_rgba(224,178,90,0.3)]'
+                    : 'border-transparent text-[var(--muted)] hover:border-[var(--line-strong)] hover:bg-[rgba(224,178,90,0.05)] hover:text-[var(--text-bright)]'
+                }`
+              }
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+
+      <div className="mt-5 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-3.5">
+        <p className="eyebrow">Quick snapshot</p>
+        <p className="display-heading mt-2 text-3xl text-[var(--accent)]">{analytics.total}</p>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted-2)]">
+          {analytics.approved} approved · {analytics.total - analytics.approved} pending / declined
+        </p>
+      </div>
+      <p className="mt-4 text-center font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">© DNDN 2026</p>
     </div>
   );
 }
