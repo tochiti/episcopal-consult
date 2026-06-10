@@ -1,8 +1,9 @@
-import { ArrowLeft, ArrowRight, BedDouble, Car, Crown, Mail, MapPin, Phone, Plane, ShieldCheck, TicketCheck, Trash2, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BedDouble, Car, Crown, Mail, MapPin, MessageCircle, Phone, Plane, ShieldCheck, TicketCheck, Trash2, User } from 'lucide-react';
 import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom';
 import AdminPageHeader from '../../components/AdminPageHeader';
 import StatusBadge from '../../components/StatusBadge';
 import { composeFullName, formatDate, formatDateTime, normalizeStatus } from '../../lib/registrations';
+import { normalizePhone } from '../UserDashboard';
 
 export default function AdminRegistrationDetail() {
   const { registrationId } = useParams();
@@ -76,6 +77,7 @@ export default function AdminRegistrationDetail() {
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted-2)]">
               ID · {registration.id?.slice(0, 8).toUpperCase() || '—'}
             </span>
+            <DelegateContactActions registration={registration} compact />
           </div>
         </div>
       </section>
@@ -106,8 +108,8 @@ export default function AdminRegistrationDetail() {
             eyebrow="03"
             title="Contact"
             items={[
-              { label: 'Email', value: registration.emailAddress, icon: Mail, mono: true },
-              { label: 'WhatsApp', value: registration.whatsappNumber, icon: Phone, mono: true },
+              { label: 'Email', value: registration.emailAddress, icon: Mail, mono: true, action: registration.emailAddress ? 'email' : null },
+              { label: 'WhatsApp', value: registration.whatsappNumber, icon: Phone, mono: true, action: 'phone' },
             ]}
           />
           <DetailSection
@@ -126,9 +128,9 @@ export default function AdminRegistrationDetail() {
               title="Companion details"
               items={[
                 { label: "Driver's name", value: registration.driverName },
-                { label: "Driver's phone", value: registration.driverPhoneNumber, mono: true },
+                { label: "Driver's phone", value: registration.driverPhoneNumber, mono: true, action: 'phone' },
                 { label: "Escort's name", value: registration.escortName },
-                { label: "Escort's phone", value: registration.escortPhoneNumber, mono: true },
+                { label: "Escort's phone", value: registration.escortPhoneNumber, mono: true, action: 'phone' },
               ]}
             />
           ) : null}
@@ -207,19 +209,94 @@ function DetailSection({ eyebrow, title, items }) {
         </span>
       </div>
       <dl className="grid gap-3 sm:grid-cols-2">
-        {items.map(({ label, value, icon: Icon, mono }) => (
-          <div key={label} className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-3.5">
-            <div className="flex items-center justify-between gap-2">
-              <dt className="eyebrow">{label}</dt>
-              {Icon ? <Icon className="h-3.5 w-3.5 text-[var(--accent)]" /> : null}
+        {items.map(({ label, value, icon: Icon, mono, action }) => {
+          const normalized = action === 'phone' ? normalizePhone(value) : '';
+          return (
+            <div key={label} className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <dt className="eyebrow">{label}</dt>
+                {Icon ? <Icon className="h-3.5 w-3.5 text-[var(--accent)]" /> : null}
+              </div>
+              <dd className={`mt-1.5 text-sm leading-7 text-[var(--text-bright)] ${mono ? 'font-mono' : 'font-medium'}`}>
+                {value || '—'}
+              </dd>
+              {action === 'phone' && normalized ? (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <a
+                    href={`tel:${normalized}`}
+                    className="btn-outline px-2.5 py-1 text-[10px] uppercase tracking-[0.16em]"
+                    aria-label={`Call ${label}`}
+                  >
+                    <Phone className="h-3 w-3" /> Call
+                  </a>
+                  <a
+                    href={`https://wa.me/${normalized.replace('+', '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-primary px-2.5 py-1 text-[10px] uppercase tracking-[0.16em]"
+                    aria-label={`WhatsApp ${label}`}
+                  >
+                    <MessageCircle className="h-3 w-3" /> WhatsApp
+                  </a>
+                </div>
+              ) : null}
+              {action === 'email' && value ? (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <a
+                    href={`mailto:${value}`}
+                    className="btn-primary px-2.5 py-1 text-[10px] uppercase tracking-[0.16em]"
+                    aria-label={`Email ${label}`}
+                  >
+                    <Mail className="h-3 w-3" /> Email
+                  </a>
+                </div>
+              ) : null}
             </div>
-            <dd className={`mt-1.5 text-sm leading-7 text-[var(--text-bright)] ${mono ? 'font-mono' : 'font-medium'}`}>
-              {value || '—'}
-            </dd>
-          </div>
-        ))}
+          );
+        })}
       </dl>
     </section>
+  );
+}
+
+/* Compact contact row that lives in the hero card. Hides itself when
+   the delegate has no contact info at all. */
+function DelegateContactActions({ registration, compact = false }) {
+  const phone = normalizePhone(registration.whatsappNumber);
+  const email = registration.emailAddress;
+  if (!phone && !email) return null;
+  return (
+    <div className={`flex flex-wrap gap-1.5 ${compact ? 'mt-1' : 'mt-3'}`}>
+      {phone ? (
+        <>
+          <a
+            href={`tel:${phone}`}
+            className="btn-outline px-3 py-1.5 text-[10px] uppercase tracking-[0.16em]"
+            aria-label="Call delegate"
+          >
+            <Phone className="h-3 w-3" /> Call
+          </a>
+          <a
+            href={`https://wa.me/${phone.replace('+', '')}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-primary px-3 py-1.5 text-[10px] uppercase tracking-[0.16em]"
+            aria-label="WhatsApp delegate"
+          >
+            <MessageCircle className="h-3 w-3" /> WhatsApp
+          </a>
+        </>
+      ) : null}
+      {email ? (
+        <a
+          href={`mailto:${email}`}
+          className="btn-outline px-3 py-1.5 text-[10px] uppercase tracking-[0.16em]"
+          aria-label="Email delegate"
+        >
+          <Mail className="h-3 w-3" /> Email
+        </a>
+      ) : null}
+    </div>
   );
 }
 

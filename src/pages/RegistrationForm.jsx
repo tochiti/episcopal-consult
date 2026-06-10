@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import {
-  ArrowLeft,
   ArrowRight,
   Calendar,
   CheckCircle2,
@@ -8,6 +7,7 @@ import {
   Copy,
   Eye,
   Mail,
+  MessageCircle,
   Phone,
   Plus,
   Trash2,
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { saveRegistration, saveRegistrationBatch } from '../db';
-import PublicFooter from '../components/PublicFooter';
+import PublicLayout from '../components/PublicLayout';
 import PassportUpload from '../components/PassportUpload';
 import { composeFullName, DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
 import {
@@ -230,106 +230,65 @@ export default function RegistrationForm() {
   }
 
   return (
-    <div className="page-shell relative pb-32 lg:pb-12">
-      {/* Header — transparent overlay like the homepage */}
-      <header className="absolute inset-x-0 top-0 z-30">
-        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
-            <div className="hidden sm:block">
-              <p className="eyebrow">Episcopal Consultation</p>
-              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
+    <PublicLayout>
+      <div className="page-shell relative">
+        <main className="relative z-10 pt-6 sm:pt-10 lg:pt-12">
+          <div className="shell-container">
+            {/* Page hero — eyebrow + centred title + programme date + back link */}
+            <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+              <Ornament />
+              <p className="eyebrow mt-7">Delegate registration</p>
+              <h1 className="display-heading mt-3 text-[2.5rem] leading-[0.95] sm:text-[4.5rem]">
+                Submit your <span className="display-accent">details.</span>
+              </h1>
+              <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(224,178,90,0.06)] px-3.5 py-1.5 font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--accent)]">
+                <Calendar className="h-3.5 w-3.5" />
+                {PROGRAMME_DATES.displayUpper}
+              </p>
+              <p className="mt-4 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+                Registration for the {DNDN_FACTS.name} host of the Episcopal Consultation. Add a single
+                delegate or several — the host secretariat receives the whole batch under one reference.
+              </p>
             </div>
-          </Link>
-          <nav className="flex items-center gap-2 sm:gap-3">
-            <Link to="/dashboard" className="hidden text-[13px] font-semibold text-[var(--muted)] transition hover:text-[var(--accent)] sm:inline-flex">
-              Look up status
-            </Link>
-            <span className="hidden h-4 w-px bg-[var(--line-strong)] sm:inline-block" aria-hidden />
-            <Link to="/" className="hidden text-[13px] font-semibold text-[var(--muted)] transition hover:text-[var(--accent)] md:inline-flex">
-              Home
-            </Link>
-          </nav>
-        </div>
-      </header>
 
-      <main className="relative z-10 pt-28 sm:pt-32">
-        <div className="shell-container">
-          {/* Page hero — eyebrow + centred title + programme date + back link */}
-          <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-            <Ornament />
-            <p className="eyebrow mt-7">Delegate registration</p>
-            <h1 className="display-heading mt-3 text-[2.5rem] leading-[0.95] sm:text-[4.5rem]">
-              Submit your <span className="display-accent">details.</span>
-            </h1>
-            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(224,178,90,0.06)] px-3.5 py-1.5 font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--accent)]">
-              <Calendar className="h-3.5 w-3.5" />
-              {PROGRAMME_DATES.displayUpper}
-            </p>
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
-              Registration for the {DNDN_FACTS.name} host of the Episcopal Consultation. Add a single
-              delegate or several — the host secretariat receives the whole batch under one reference.
-            </p>
-          </div>
+            {/* Two-column layout — form on the left, sidebar on the right */}
+            <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start lg:gap-8">
+              <div className="min-w-0">
+                <DelegateStrip
+                  delegates={delegates}
+                  activeIdx={activeIdx}
+                  onSelect={setActiveIdx}
+                  onAdd={addDelegate}
+                  onRemove={removeDelegate}
+                  onClearAll={clearAll}
+                />
 
-          {/* Two-column layout — form on the left, sidebar on the right */}
-          <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start lg:gap-8">
-            <div className="min-w-0">
-              <DelegateStrip
-                delegates={delegates}
-                activeIdx={activeIdx}
-                onSelect={setActiveIdx}
-                onAdd={addDelegate}
-                onRemove={removeDelegate}
-                onClearAll={clearAll}
-              />
+                <DelegateForm
+                  key={activeIdx}
+                  delegate={active}
+                  onChange={updateActive}
+                  onProvinceChange={onProvinceChange}
+                  onTitleChange={onTitleChange}
+                  onBodyChange={onBodyChange}
+                  error={error}
+                />
 
-              <DelegateForm
-                key={activeIdx}
-                delegate={active}
-                onChange={updateActive}
-                onProvinceChange={onProvinceChange}
-                onTitleChange={onTitleChange}
-                onBodyChange={onBodyChange}
-                error={error}
-              />
-
-              <div className="mt-6 hidden items-center justify-end gap-3 lg:flex">
-                <button type="button" onClick={() => addDelegate()} className="secondary-button">
-                  <Plus className="h-4 w-4" /> Add another delegate
-                </button>
-                <button type="button" onClick={goToPreview} disabled={loading} className="primary-button">
-                  <Eye className="h-4 w-4" /> Preview &amp; submit
-                </button>
+                <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  <button type="button" onClick={() => addDelegate()} className="secondary-button">
+                    <Plus className="h-4 w-4" /> Add another delegate
+                  </button>
+                  <button type="button" onClick={goToPreview} disabled={loading} className="primary-button">
+                    <Eye className="h-4 w-4" /> Preview &amp; submit
+                  </button>
+                </div>
               </div>
+
+              <FormSidebar />
             </div>
-
-            <FormSidebar />
           </div>
-        </div>
-      </main>
-
-      {/* Mobile action bar */}
-      <div className="mobile-action-bar">
-        <div className="mx-auto flex max-w-3xl items-center gap-2">
-          <button
-            type="button"
-            onClick={() => addDelegate()}
-            className="secondary-button flex-1 px-3 py-2.5 text-xs sm:text-sm"
-          >
-            <Plus className="h-4 w-4" /> Add delegate
-          </button>
-          <button
-            type="button"
-            onClick={goToPreview}
-            disabled={loading}
-            className="primary-button flex-1 px-3 py-2.5 text-xs sm:text-sm"
-          >
-            <Eye className="h-4 w-4" /> Preview &amp; submit
-          </button>
-        </div>
+        </main>
       </div>
-    </div>
+    </PublicLayout>
   );
 }
 
@@ -762,71 +721,47 @@ function FormSidebar() {
 
 function PreviewView({ delegates, onEdit, onBack, onSubmit, loading, error }) {
   return (
-    <div className="page-shell relative pb-32">
-      <header className="absolute inset-x-0 top-0 z-30">
-        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
-            <div className="hidden sm:block">
-              <p className="eyebrow">Episcopal Consultation</p>
-              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
+    <PublicLayout>
+      <div className="page-shell relative">
+        <main className="relative z-10 pt-6 sm:pt-10 lg:pt-12">
+          <div className="shell-container max-w-5xl">
+            <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+              <Ornament />
+              <p className="eyebrow mt-7">Step 2 of 2</p>
+              <h1 className="display-heading mt-3 text-[2.25rem] leading-[0.95] sm:text-[4rem]">
+                Review your <span className="display-accent">delegation.</span>
+              </h1>
+              <p className="mt-4 max-w-md text-[15px] leading-7 text-[var(--muted)]">
+                {delegates.length === 1
+                  ? 'One delegate. Confirm the details below, then submit.'
+                  : `${delegates.length} delegates in this batch. Confirm each card, then submit them all under one reference.`}
+              </p>
             </div>
-          </Link>
-          <Link to="/dashboard" className="hidden text-[13px] font-semibold text-[var(--muted)] transition hover:text-[var(--accent)] sm:inline-flex">
-            Look up status
-          </Link>
-        </div>
-      </header>
 
-      <main className="relative z-10 pt-28 sm:pt-32">
-        <div className="shell-container max-w-5xl">
-          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-            <Ornament />
-            <p className="eyebrow mt-7">Step 2 of 2</p>
-            <h1 className="display-heading mt-3 text-[2.25rem] leading-[0.95] sm:text-[4rem]">
-              Review your <span className="display-accent">delegation.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-[15px] leading-7 text-[var(--muted)]">
-              {delegates.length === 1
-                ? 'One delegate. Confirm the details below, then submit.'
-                : `${delegates.length} delegates in this batch. Confirm each card, then submit them all under one reference.`}
-            </p>
-          </div>
+            {error ? (
+              <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
+                <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            ) : null}
 
-          {error ? (
-            <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
-              <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
-              <span>{error}</span>
+            <div className="mt-10 grid gap-4">
+              {delegates.map((d, i) => (
+                <PreviewCard key={i} index={i} delegate={d} onEdit={() => onEdit(i)} />
+              ))}
             </div>
-          ) : null}
 
-          <div className="mt-10 grid gap-4">
-            {delegates.map((d, i) => (
-              <PreviewCard key={i} index={i} delegate={d} onEdit={() => onEdit(i)} />
-            ))}
+            <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <button type="button" onClick={onBack} className="secondary-button">Edit</button>
+              <button type="button" onClick={onSubmit} disabled={loading} className="primary-button">
+                {loading ? 'Submitting…' : 'Submit registration'}
+                {!loading ? <CheckCircle2 className="h-4 w-4" /> : null}
+              </button>
+            </div>
           </div>
-
-          <div className="mt-8 hidden items-center justify-end gap-3 lg:flex">
-            <button type="button" onClick={onBack} className="secondary-button">Edit</button>
-            <button type="button" onClick={onSubmit} disabled={loading} className="primary-button">
-              {loading ? 'Submitting…' : 'Submit registration'}
-              {!loading ? <CheckCircle2 className="h-4 w-4" /> : null}
-            </button>
-          </div>
-        </div>
-      </main>
-
-      <div className="mobile-action-bar">
-        <div className="mx-auto flex max-w-3xl items-center gap-2">
-          <button type="button" onClick={onBack} className="secondary-button flex-1 px-3 py-2.5 text-xs sm:text-sm">
-            Edit
-          </button>
-          <button type="button" onClick={onSubmit} disabled={loading} className="primary-button flex-1 px-3 py-2.5 text-xs sm:text-sm">
-            {loading ? 'Submitting…' : 'Submit'}
-          </button>
-        </div>
+        </main>
       </div>
-    </div>
+    </PublicLayout>
   );
 }
 
@@ -920,37 +855,23 @@ function SuccessView({ batch, onAnother }) {
       : '—';
 
   return (
-    <div className="page-shell relative">
-      <span
-        className="hero-blob"
-        style={{ top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 640, height: 640, background: 'radial-gradient(circle, rgba(95,185,138,0.16), transparent 65%)' }}
-        aria-hidden
-      />
-      <span
-        className="hero-blob"
-        style={{ bottom: '-15%', right: '-8%', width: 480, height: 480, background: 'radial-gradient(circle, rgba(224,178,90,0.12), transparent 70%)' }}
-        aria-hidden
-      />
+    <PublicLayout>
+      <div className="page-shell relative">
+        <span
+          className="hero-blob"
+          style={{ top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 640, height: 640, background: 'radial-gradient(circle, rgba(95,185,138,0.16), transparent 65%)' }}
+          aria-hidden
+        />
+        <span
+          className="hero-blob"
+          style={{ bottom: '-15%', right: '-8%', width: 480, height: 480, background: 'radial-gradient(circle, rgba(224,178,90,0.12), transparent 70%)' }}
+          aria-hidden
+        />
 
-      <header className="absolute inset-x-0 top-0 z-30">
-        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
-            <div className="hidden sm:block">
-              <p className="eyebrow">Episcopal Consultation</p>
-              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
-            </div>
-          </Link>
-          <Link to="/" className="ghost-link">
-            <ArrowLeft className="h-4 w-4" /> Back to homepage
-          </Link>
-        </div>
-      </header>
-
-      <main className="relative z-10 pt-28 sm:pt-32">
-        <div className="shell-container max-w-3xl">
-          {/* Hero — confirmation */}
-          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <main className="relative z-10 pt-6 sm:pt-10 lg:pt-12">
+          <div className="shell-container max-w-3xl">
+            {/* Hero — confirmation */}
+            <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
             <Ornament />
             <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] px-4 py-1.5">
               <CheckCircle2 className="h-4 w-4 text-[var(--ok)]" />
@@ -1009,12 +930,14 @@ function SuccessView({ batch, onAnother }) {
                   role="Secretariat"
                   phone="08060821822"
                   dial="tel:+2348060821822"
+                  whatsapp="https://wa.me/2348060821822"
                 />
                 <ContactCard
                   name="Engr. Edwin Amadi"
                   role="Logistics"
                   phone="08036716352"
                   dial="tel:+2348036716352"
+                  whatsapp="https://wa.me/2348036716352"
                 />
               </div>
 
@@ -1066,9 +989,8 @@ function SuccessView({ batch, onAnother }) {
           </div>
         </div>
       </main>
-
-      <PublicFooter />
-    </div>
+      </div>
+    </PublicLayout>
   );
 }
 
@@ -1113,21 +1035,33 @@ function CopyableReference({ label, value, hint }) {
   );
 }
 
-function ContactCard({ name, role, phone, dial }) {
+function ContactCard({ name, role, phone, dial, whatsapp }) {
   return (
-    <a
-      href={dial}
-      className="group flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-4 transition hover:border-[var(--accent)]"
-    >
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--line-strong)] bg-[rgba(224,178,90,0.08)] text-[var(--accent)]">
-        <Phone className="h-4 w-4" />
+    <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-4 transition hover:border-[var(--line-strong)]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--line-strong)] bg-[rgba(224,178,90,0.08)] text-[var(--accent)]">
+          <Phone className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-[var(--text-bright)]">{name}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--muted-2)]">{role}</p>
+          <p className="mt-1 font-mono text-sm text-[var(--accent)]">{phone}</p>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-[var(--text-bright)]">{name}</p>
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--muted-2)]">{role}</p>
-        <p className="mt-1 font-mono text-sm text-[var(--accent)]">{phone}</p>
+      <div className="mt-3 flex gap-2">
+        <a href={dial} className="btn-outline flex-1 justify-center px-3 py-2 text-xs">
+          <Phone className="h-3.5 w-3.5" /> Call
+        </a>
+        <a
+          href={whatsapp}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-primary flex-1 justify-center px-3 py-2 text-xs"
+        >
+          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+        </a>
       </div>
-    </a>
+    </div>
   );
 }
 
