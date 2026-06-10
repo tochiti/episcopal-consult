@@ -5,7 +5,10 @@ import {
   Calendar,
   CheckCircle2,
   CircleAlert,
+  Copy,
   Eye,
+  Mail,
+  Phone,
   Plus,
   Trash2,
   Users,
@@ -28,17 +31,21 @@ import {
 } from '../lib/registrationOptions';
 
 const emptyDelegate = () => ({
+  /* Identity */
   title: '',
   titleOther: '',
   firstName: '',
   lastName: '',
   position: '',
+  /* Geography */
   province: '',
   diocese: '',
   body: '',
   dioceseOther: '',
+  /* Contact */
   whatsappNumber: '',
   emailAddress: '',
+  /* Travel */
   dateOfArrival: '',
   modeOfTravel: '',
   requireInternalTransport: 'No',
@@ -47,12 +54,26 @@ const emptyDelegate = () => ({
   driverPhoneNumber: '',
   escortName: '',
   escortPhoneNumber: '',
+  /* Passport */
   passportPhoto: null,
   passportMime: null,
   passportSizeBytes: 0,
   passportWidth: 0,
   passportHeight: 0,
   passportFileName: '',
+  /* Operations — set by the admin later; declared here so the form
+     state has a complete shape and nothing leaks as `undefined`. */
+  accommodationId: null,
+  roomNumber: '',
+  checkInDate: '',
+  checkOutDate: '',
+  transportId: null,
+  pickupConfirmed: false,
+  /* Protocol */
+  vipLevel: 'regular',
+  dietaryRequirements: '',
+  specialNeeds: '',
+  protocolNotes: '',
 });
 
 /* Validate the affiliation block — handles the cascading
@@ -891,8 +912,26 @@ function PreviewRow({ k, v }) {
 }
 
 function SuccessView({ batch, onAnother }) {
+  const isBatch = batch.batchId && batch.batchId !== 'SINGLE';
+  const reference = isBatch
+    ? batch.batchId
+    : batch.registrations?.[0]?.id
+      ? `DNDN-${batch.registrations[0].id.slice(0, 8).toUpperCase()}`
+      : '—';
+
   return (
     <div className="page-shell relative">
+      <span
+        className="hero-blob"
+        style={{ top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 640, height: 640, background: 'radial-gradient(circle, rgba(95,185,138,0.16), transparent 65%)' }}
+        aria-hidden
+      />
+      <span
+        className="hero-blob"
+        style={{ bottom: '-15%', right: '-8%', width: 480, height: 480, background: 'radial-gradient(circle, rgba(224,178,90,0.12), transparent 70%)' }}
+        aria-hidden
+      />
+
       <header className="absolute inset-x-0 top-0 z-30">
         <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
           <Link to="/" className="flex items-center gap-3">
@@ -902,11 +941,15 @@ function SuccessView({ batch, onAnother }) {
               <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
             </div>
           </Link>
+          <Link to="/" className="ghost-link">
+            <ArrowLeft className="h-4 w-4" /> Back to homepage
+          </Link>
         </div>
       </header>
 
       <main className="relative z-10 pt-28 sm:pt-32">
         <div className="shell-container max-w-3xl">
+          {/* Hero — confirmation */}
           <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
             <Ornament />
             <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] px-4 py-1.5">
@@ -918,15 +961,36 @@ function SuccessView({ batch, onAnother }) {
             <h1 className="display-heading mt-5 text-[2.5rem] leading-[0.95] sm:text-[4.5rem]">
               Your registration<br /><span className="display-accent">is in.</span>
             </h1>
-            {batch.batchId && batch.batchId !== 'SINGLE' ? (
-              <p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                Batch reference: <span className="text-[var(--accent)]">{batch.batchId}</span>
-              </p>
-            ) : null}
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(224,178,90,0.06)] px-3.5 py-1.5 font-mono text-[0.58rem] font-bold uppercase tracking-[0.24em] text-[var(--accent)]">
+              <Calendar className="h-3.5 w-3.5" />
+              {PROGRAMME_DATES.displayUpper}
+            </p>
           </div>
 
-          <div className="surface-glass mt-10 p-6 sm:p-10">
-            <div className="space-y-4 text-[15px] leading-7 text-[var(--muted)]">
+          {/* Reference card — copyable */}
+          <div className="mt-8">
+            <CopyableReference
+              label={isBatch ? 'Batch reference' : 'Submission reference'}
+              value={reference}
+              hint={isBatch
+                ? `${batch.count} delegates under one reference. Keep this for your records.`
+                : 'Keep this for your records. Use it when you look up your status.'}
+            />
+          </div>
+
+          {/* Thank-you letter — formatted as a letter */}
+          <article className="surface-glass mt-6 overflow-hidden">
+            <header className="flex items-center gap-3 border-b border-[var(--line)] bg-[rgba(12,6,8,0.4)] px-6 py-4 sm:px-8">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--line-strong)] bg-[rgba(95,185,138,0.10)] text-[var(--ok)]">
+                <Mail className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="eyebrow">A note from the secretariat</p>
+                <p className="mt-0.5 text-[13px] font-semibold text-[var(--text-bright)]">Episcopal Consultation Planning Committee</p>
+              </div>
+            </header>
+
+            <div className="space-y-4 px-6 py-6 text-[15px] leading-7 text-[var(--muted)] sm:px-8 sm:py-8">
               <p>Your Grace / Your Lordship,</p>
               <p>
                 Thank you so much for taking the time to share your details for the Church of Nigeria Episcopal
@@ -938,36 +1002,148 @@ function SuccessView({ batch, onAnother }) {
                 arrangements, and other logistics.
               </p>
               <p>If you need any help or further information, please feel free to reach out to:</p>
-              <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4 sm:p-5">
-                <p className="font-semibold text-[var(--text-bright)]">Rev. Canon Gideon Genka</p>
-                <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08060821822</p>
-                <p className="mt-3 font-semibold text-[var(--text-bright)]">Engr. Edwin Amadi</p>
-                <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08036716352</p>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ContactCard
+                  name="Rev. Canon Gideon Genka"
+                  role="Secretariat"
+                  phone="08060821822"
+                  dial="tel:+2348060821822"
+                />
+                <ContactCard
+                  name="Engr. Edwin Amadi"
+                  role="Logistics"
+                  phone="08036716352"
+                  dial="tel:+2348036716352"
+                />
               </div>
+
               <p>
                 We&apos;re excited to welcome Your Grace/Your Lordship to the {DNDN_FACTS.name}. May the Lord
                 continue to strengthen and bless your ministry.
               </p>
+
               <div className="pt-2">
                 <p>Warmest regards,</p>
                 <p className="mt-1 font-semibold text-[var(--text-bright)]">Episcopal Consultation Planning Committee</p>
                 <p>{DNDN_FACTS.name} (DNDN)</p>
               </div>
             </div>
+          </article>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link to="/dashboard" className="secondary-button justify-center">
-                Look up status
-              </Link>
-              <button type="button" onClick={onAnother} className="primary-button justify-center">
-                <Plus className="h-4 w-4" /> New registration
-              </button>
+          {/* What's next — three small cards */}
+          <section className="mt-8">
+            <p className="eyebrow">What happens next</p>
+            <h2 className="display-heading mt-1.5 text-2xl text-[var(--text-bright)] sm:text-3xl">We&apos;ll be in touch.</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <NextStep
+                no="01"
+                title="Approval"
+                copy="The secretariat reviews your details and confirms your accreditation."
+              />
+              <NextStep
+                no="02"
+                title="Logistics"
+                copy="Accommodation, airport pickup and protocol briefing are scheduled from your travel info."
+              />
+              <NextStep
+                no="03"
+                title="Arrival"
+                copy="Arrive on your travel date — your badge, room and pickup are ready."
+              />
             </div>
+          </section>
+
+          {/* CTAs */}
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <Link to="/dashboard" className="primary-button justify-center">
+              Look up status by email
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <button type="button" onClick={onAnother} className="secondary-button justify-center">
+              <Plus className="h-4 w-4" /> Submit another registration
+            </button>
           </div>
         </div>
       </main>
 
       <PublicFooter />
+    </div>
+  );
+}
+
+/* Copyable reference — tap/click to copy the batch or submission ID. */
+function CopyableReference({ label, value, hint }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (copyError) {
+      console.warn('Clipboard write failed', copyError);
+    }
+  };
+  return (
+    <div className="surface-glass p-5 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="eyebrow">{label}</p>
+          <p className="mt-2 break-all font-mono text-lg font-semibold text-[var(--accent)] sm:text-xl">{value}</p>
+          {hint ? <p className="mt-1.5 text-[12px] text-[var(--muted-2)]">{hint}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="secondary-button justify-center px-4 py-2.5 text-xs sm:text-sm"
+          aria-label="Copy reference"
+        >
+          {copied ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-[var(--ok)]" /> Copied
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" /> Copy reference
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ContactCard({ name, role, phone, dial }) {
+  return (
+    <a
+      href={dial}
+      className="group flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-4 transition hover:border-[var(--accent)]"
+    >
+      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--line-strong)] bg-[rgba(224,178,90,0.08)] text-[var(--accent)]">
+        <Phone className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-[var(--text-bright)]">{name}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--muted-2)]">{role}</p>
+        <p className="mt-1 font-mono text-sm text-[var(--accent)]">{phone}</p>
+      </div>
+    </a>
+  );
+}
+
+function NextStep({ no, title, copy }) {
+  return (
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-3)] p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--line-strong)] bg-[rgba(224,178,90,0.08)] text-[var(--accent)]">
+          <CheckCircle2 className="h-4 w-4" />
+        </div>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--muted-2)]">
+          STEP {no}
+        </span>
+      </div>
+      <p className="mt-3 text-[15px] font-semibold text-[var(--text-bright)]">{title}.</p>
+      <p className="mt-1.5 text-[12.5px] leading-6 text-[var(--muted)]">{copy}</p>
     </div>
   );
 }

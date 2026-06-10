@@ -18,7 +18,10 @@ export const COLLECTION_NAME = 'episcopal_consultation_registrations';
 export const ACCOMMODATIONS_COLLECTION = 'episcopal_consultation_accommodations';
 export const TRANSPORTS_COLLECTION = 'episcopal_consultation_transports';
 
-const trim = (v) => (typeof v === 'string' ? v.trim() : v);
+/* Defensive trim — Firebase rejects undefined/null field values, so
+   any non-string input (including the absent fields on a fresh form
+   submission) collapses to an empty string. */
+const trim = (v) => (typeof v === 'string' ? v.trim() : '');
 
 const buildPayload = (data) => {
   /* "Other (specify)" honorifics are resolved to the typed-in text so
