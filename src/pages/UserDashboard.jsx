@@ -5,6 +5,7 @@ import { getRegistrationByEmail } from '../db';
 import PublicLayout from '../components/PublicLayout';
 import StatusBadge from '../components/StatusBadge';
 import { composeFullName, formatDate, formatDateTime, normalizeStatus, PROGRAMME_DATES } from '../lib/registrations';
+import useDocumentTitle from '../lib/useDocumentTitle';
 
 function Ornament({ tone = 'gold' }) {
   const color = tone === 'gold' ? 'var(--accent)' : 'rgba(224,178,90,0.35)';
@@ -20,6 +21,11 @@ function Ornament({ tone = 'gold' }) {
 }
 
 export default function UserDashboard() {
+  useDocumentTitle(
+    'Find your record — Episcopal Consultation 2026',
+    'Look up the status of your registration for the Episcopal Consultation 2026 using the email address you registered with.'
+  );
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);

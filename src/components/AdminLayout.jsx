@@ -18,6 +18,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { deleteRegistration, getRegistrations, updateRegistrationStatus } from '../db';
 import { PROGRAMME_DATES, summarizeRegistrations } from '../lib/registrations';
+import useDocumentTitle from '../lib/useDocumentTitle';
 
 /* Admin nav — all eight destinations in a single ordered list.
    Reused by the desktop sidebar, the mobile slide-in drawer, and the
@@ -38,6 +39,29 @@ const adminNav = [
 const mobileBottomNav = adminNav.slice(0, 4);
 
 export default function AdminLayout() {
+  useDocumentTitle('Secretariat Console — DNDN 2026');
+
+  // Keep the admin console out of search results — delegate data is
+  // private and the screens only render for authenticated staff.
+  useEffect(() => {
+    const existing = document.querySelector('meta[name="robots"]');
+    const content = 'noindex, nofollow, noarchive';
+    if (existing) {
+      const previous = existing.getAttribute('content');
+      existing.setAttribute('content', content);
+      return () => {
+        if (previous) existing.setAttribute('content', previous);
+      };
+    }
+    const tag = document.createElement('meta');
+    tag.setAttribute('name', 'robots');
+    tag.setAttribute('content', content);
+    document.head.appendChild(tag);
+    return () => {
+      tag.remove();
+    };
+  }, []);
+
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -200,11 +224,7 @@ export default function AdminLayout() {
 
       {/* ──────────────  DESKTOP LEFT SIDEBAR  ────────────── */}
       <aside className="fixed left-0 top-16 z-20 hidden h-[calc(100vh-4rem)] w-64 border-r border-[var(--line)] bg-[rgba(12,6,8,0.7)] backdrop-blur lg:block">
-        <SidebarPanel
-          handleSignOut={handleSignOut}
-          handleExportCSV={handleExportCSV}
-          analytics={analytics}
-        />
+        <SidebarPanel />
       </aside>
 
       {/* ──────────────  MOBILE SLIDE-IN DRAWER (from left)  ────────────── */}
@@ -352,19 +372,12 @@ export default function AdminLayout() {
   );
 }
 
-function SidebarPanel({ handleSignOut, handleExportCSV, analytics }) {
+function SidebarPanel() {
   return (
     <div className="flex h-full flex-col p-5">
-      <div className="flex items-center gap-3 pb-4">
-        <img src="/logo.png" alt="DNDN" className="h-10 w-10 rounded-full bg-[var(--text)] p-0.5 shadow-sm" />
-        <div>
-          <p className="font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">DNDN 2026</p>
-          <p className="font-display text-base leading-none text-[var(--text-bright)]">Secretariat</p>
-        </div>
-      </div>
-
-      {/* Decorative cross rule */}
-      <div className="my-4 flex items-center justify-center gap-2" aria-hidden>
+      {/* Decorative cross rule — anchors the nav visually now that the
+          brand block moved to the top header. */}
+      <div className="my-2 flex items-center justify-center gap-2 pb-4" aria-hidden>
         <span className="h-px w-8 bg-[var(--line)]" />
         <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
           <path d="M7 0v14M0 7h14" stroke="var(--accent)" strokeWidth="1" />
@@ -395,13 +408,6 @@ function SidebarPanel({ handleSignOut, handleExportCSV, analytics }) {
         </div>
       </nav>
 
-      <div className="mt-5 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-3.5">
-        <p className="eyebrow">Quick snapshot</p>
-        <p className="display-heading mt-2 text-3xl text-[var(--accent)]">{analytics.total}</p>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted-2)]">
-          {analytics.approved} approved · {analytics.total - analytics.approved} pending / declined
-        </p>
-      </div>
       <p className="mt-4 text-center font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">© DNDN 2026</p>
     </div>
   );

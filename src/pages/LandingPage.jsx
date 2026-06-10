@@ -2,6 +2,7 @@ import { ArrowRight, Calendar, ClipboardList, Plane, BedDouble, Phone, ShieldChe
 import { Link } from 'react-router-dom';
 import { DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
 import PublicLayout from '../components/PublicLayout';
+import useDocumentTitle from '../lib/useDocumentTitle';
 
 const steps = [
   {
@@ -70,6 +71,11 @@ function Ornament({ tone = 'gold' }) {
 }
 
 export default function LandingPage() {
+  useDocumentTitle(
+    'Episcopal Consultation 2026 — DNDN Registration Portal',
+    'Registration portal for the Episcopal Consultation of the Church of Nigeria (Anglican Communion), hosted by the Diocese of Niger Delta North, 13–17 July 2026 in Port Harcourt.'
+  );
+
   return (
     <PublicLayout>
       {/* ──────────────  HERO  ────────────── */}

@@ -19,6 +19,7 @@ import { saveRegistration, saveRegistrationBatch } from '../db';
 import PublicLayout from '../components/PublicLayout';
 import PassportUpload from '../components/PassportUpload';
 import { composeFullName, DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
+import useDocumentTitle from '../lib/useDocumentTitle';
 import {
   HONORIFIC_OTHER,
   HONORIFICS_OPTIONS,
@@ -119,6 +120,11 @@ function Ornament({ tone = 'gold' }) {
 }
 
 export default function RegistrationForm() {
+  useDocumentTitle(
+    'Register a delegate — Episcopal Consultation 2026',
+    'Submit delegate details for the Episcopal Consultation hosted by the Diocese of Niger Delta North, 13–17 July 2026 in Port Harcourt.'
+  );
+
   const [delegates, setDelegates] = useState([emptyDelegate()]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [view, setView] = useState('form'); // 'form' | 'preview' | 'success'

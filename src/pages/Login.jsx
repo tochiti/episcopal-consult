@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Calendar, ShieldCheck, LogIn } from 'lucide-react';
+import { Calendar, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
 import PublicLayout from '../components/PublicLayout';
+import useDocumentTitle from '../lib/useDocumentTitle';
 
 function Ornament({ tone = 'gold' }) {
   const color = tone === 'gold' ? 'var(--accent)' : 'rgba(224,178,90,0.35)';
@@ -20,8 +21,14 @@ function Ornament({ tone = 'gold' }) {
 }
 
 export default function Login() {
+  useDocumentTitle(
+    'Secretariat sign-in — Episcopal Consultation 2026',
+    'Host secretariat sign-in for the Episcopal Consultation 2026 console. Restricted to authorised diocesan and provincial secretaries.'
+  );
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -132,15 +139,26 @@ export default function Login() {
                   </label>
                   <label className="block">
                     <span className="field-label">Password</span>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      required
-                      placeholder="••••••••"
-                      className="field-input"
-                      autoComplete="current-password"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        required
+                        placeholder="••••••••"
+                        className="field-input pr-12"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[var(--muted-2)] transition hover:text-[var(--accent)]"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </label>
                   <button type="submit" disabled={isLoading} className="primary-button mt-3 w-full py-3.5">
                     {isLoading ? 'Signing in…' : 'Sign in to console'}
@@ -151,8 +169,8 @@ export default function Login() {
                 <div className="mt-7 flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-4">
                   <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--accent)]" />
                   <p className="text-xs leading-5 text-[var(--muted)]">
-                    Sessions are handled by Firebase Authentication. Always sign out on shared devices. Lost access?
-                    Contact the system administrator.
+                    Sessions are encrypted and tied to this device. Always sign out on shared hardware. Lost access?
+                    Contact the host diocese secretariat.
                   </p>
                 </div>
               </section>

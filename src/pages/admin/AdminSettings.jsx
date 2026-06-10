@@ -13,8 +13,8 @@ export default function AdminSettings() {
         eyebrow="Console settings"
         title="Console"
         accent="settings."
-        copy="Manage your secretariat session, audit the operational systems and end the day. Data stays in the host diocese Firebase project — no third-party access."
-        tags={[`${total} delegates`, `${approved} approved`, `Firebase Auth active`]}
+        copy="Manage your secretariat session, audit the operational systems and end the day. Data stays in the host diocese project — no third-party access."
+        tags={[`${total} delegates`, `${approved} approved`, `Session encrypted`]}
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -39,7 +39,7 @@ export default function AdminSettings() {
             </button>
             <span className="inline-flex items-center gap-2 text-xs text-[var(--muted)]">
               <ShieldCheck className="h-3.5 w-3.5 text-[var(--accent)]" />
-              Sessions are handled by Firebase Authentication.
+              Sessions are encrypted and tied to this device.
             </span>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function AdminSettings() {
             </div>
           </div>
           <p className="mt-5 text-sm leading-7 text-[var(--muted)]">
-            This console reads delegate submissions in real time from the host diocese's Firebase project. Use
+            This console reads delegate submissions in real time from the host diocese's secure database. Use
             the Planning Console on the Overview page for charts and the report builder. All exports are produced
             client-side — no third-party access to delegate data.
           </p>
