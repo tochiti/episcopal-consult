@@ -1,32 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Episcopal Consult DNDN — design tokens
+   Palette: deep wine/maroon base with warm gold accent.
+   Serious, ecclesiastical, no marketing sheen.
+   --------------------------------------------------------------------------- */
 :root {
-  color-scheme: light;
-  --bg: #f6f3ee;
-  --panel: rgba(255, 255, 255, 0.82);
-  --panel-solid: #fffdf9;
-  --line: rgba(18, 24, 38, 0.09);
-  --text: #151821;
-  --muted: #5a6475;
-  --deep: #111827;
-  --accent: #0f766e;
-  --accent-2: #f97316;
-  --accent-3: #2563eb;
+  color-scheme: dark;
+
+  /* Surface palette */
+  --bg: #160a0d;          /* base — deep wine-black */
+  --bg-2: #1f0d12;        /* page tint */
+  --bg-3: #0c0608;        /* deepest */
+
+  /* Panels */
+  --panel: rgba(34, 16, 20, 0.62);
+  --panel-solid: #1a0c10;
+  --panel-strong: rgba(44, 22, 28, 0.78);
+  --line: rgba(224, 178, 90, 0.16);
+  --line-strong: rgba(224, 178, 90, 0.34);
+
+  /* Type */
+  --text: #f3eada;        /* warm bone */
+  --muted: rgba(243, 234, 218, 0.68);
+  --muted-2: rgba(243, 234, 218, 0.45);
+
+  /* Accents */
+  --accent: #e0b25a;      /* warm gold */
+  --accent-hover: #ecc273;
+  --accent-2: #b8893c;    /* deeper gold */
+  --wine: #6e1d2a;        /* mid maroon — for badges / hover wash */
+  --wine-2: #4a121d;      /* deep maroon */
+
+  /* Status (tuned for dark base) */
+  --ok: #5fb98a;
+  --ok-soft: rgba(95, 185, 138, 0.14);
+  --warn: #e9b14a;
+  --warn-soft: rgba(233, 177, 74, 0.14);
+  --err: #e57787;
+  --err-soft: rgba(229, 119, 135, 0.14);
 }
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", sans-serif;
-  --font-serif: "Instrument Serif", serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Bebas Neue", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -35,86 +62,123 @@
     font-family: var(--font-sans);
     color: var(--text);
     background:
-      radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 28%),
-      radial-gradient(circle at top right, rgba(249, 115, 22, 0.10), transparent 24%),
-      linear-gradient(180deg, #fbfaf7 0%, #f1ece3 100%);
+      radial-gradient(ellipse 70% 50% at 85% -8%, rgba(224, 178, 90, 0.08), transparent 60%),
+      radial-gradient(ellipse 80% 60% at -10% 90%, rgba(110, 29, 42, 0.42), transparent 65%),
+      linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 55%, var(--bg-3) 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  img {
-    display: block;
-    max-width: 100%;
+  img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  input, select, textarea { -webkit-appearance: none; appearance: none; }
+
+  /* Tap targets: enforce on touch */
+  @media (max-width: 1023px) {
+    button, a.btn-primary, a.btn-outline, a.btn-secondary, a.primary-button, a.secondary-button {
+      min-height: 44px;
+    }
   }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  button,
-  input,
-  select {
-    font: inherit;
-  }
-
-  #root {
-    min-height: 100vh;
-  }
+  #root { min-height: 100vh; position: relative; z-index: 1; }
 }
 
 @layer components {
-  .page-shell {
-    @apply min-h-screen;
-  }
+  .page-shell { @apply min-h-screen; }
 
-  .shell-container {
-    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
-  }
+  .shell-container { @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8; }
 
-  .page-section {
-    @apply mt-8 sm:mt-10;
-  }
+  .page-section { @apply mt-6 sm:mt-8 lg:mt-10; }
 
   .surface-card {
-    @apply rounded-[2rem] border border-white/70 bg-[rgba(255,253,249,0.84)] shadow-[0_24px_70px_-34px_rgba(15,23,42,0.35)] backdrop-blur-md;
+    @apply rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)] backdrop-blur-md;
   }
 
   .surface-soft {
-    @apply rounded-[1.5rem] border border-slate-200/80 bg-white/80 shadow-sm;
+    @apply rounded-xl border border-[var(--line)] bg-[rgba(28,14,18,0.55)] shadow-sm;
+  }
+
+  .surface-glass {
+    @apply rounded-3xl border border-[var(--line-strong)] bg-[var(--panel-strong)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.75)] backdrop-blur-lg;
   }
 
   .eyebrow {
-    @apply text-[11px] font-bold uppercase tracking-[0.26em] text-slate-500;
+    @apply font-mono text-[0.6rem] font-bold uppercase tracking-[0.28em] text-[rgba(224,178,90,0.72)];
   }
+
+  .eyebrow-muted {
+    @apply font-mono text-[0.58rem] font-bold uppercase tracking-[0.26em] text-[var(--muted-2)];
+  }
+
+  .display-heading {
+    @apply font-display leading-[0.92] tracking-[0.005em] text-[var(--text)];
+  }
+
+  .display-yellow { color: var(--accent); }
 
   .field-label {
-    @apply mb-2 block text-sm font-semibold text-slate-700;
-  }
-
-  .field-input {
-    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-100;
+    @apply mb-1.5 block font-mono text-[0.58rem] font-bold uppercase tracking-[0.24em] text-[var(--muted-2)];
   }
 
   .field-hint {
-    @apply mt-2 text-xs text-slate-500;
+    @apply mt-1.5 text-[11px] leading-snug text-[var(--muted-2)];
+  }
+
+  .field-input {
+    @apply w-full rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.6)] px-3.5 py-3 text-[var(--text)] shadow-sm outline-none transition placeholder:text-[var(--muted-2)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(224,178,90,0.18)];
+  }
+
+  .field-select {
+    @apply w-full rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.6)] px-3.5 py-3 text-[var(--text)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(224,178,90,0.18)];
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%23e0b25a' stroke-width='1.5' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    background-size: 10px 6px;
+    padding-right: 2.5rem;
   }
 
   .primary-button {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[#1a0c10] transition hover:bg-[var(--accent-hover)] hover:shadow-[0_0_22px_rgba(224,178,90,0.32)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55;
   }
 
   .secondary-button {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(28,14,18,0.5)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[rgba(224,178,90,0.07)] active:translate-y-px;
   }
 
   .ghost-link {
-    @apply inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950;
+    @apply inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--accent)];
   }
 
   .brand-logo {
-    @apply h-11 w-11 rounded-full bg-white p-1.5 shadow-sm sm:h-12 sm:w-12;
+    @apply h-10 w-10 rounded-full bg-[var(--text)] p-1 shadow-sm sm:h-11 sm:w-11;
   }
 
   .icon-chip {
-    @apply flex h-11 w-11 items-center justify-center rounded-2xl;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-xl;
+  }
+
+  .stat-numeral {
+    @apply font-display text-5xl leading-none tracking-[0.01em] text-[var(--accent)];
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-[rgba(224,178,90,0.30)] bg-[rgba(224,178,90,0.07)] px-3 py-1 font-mono text-[0.58rem] font-bold uppercase tracking-[0.22em] text-[var(--accent)];
+  }
+
+  .divider { @apply border-t border-[var(--line)]; }
+
+  .hero-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* Sticky mobile action bar */
+  .mobile-action-bar {
+    @apply fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line-strong)] bg-[rgba(12,6,8,0.94)] px-4 py-3 backdrop-blur lg:hidden;
   }
 }
