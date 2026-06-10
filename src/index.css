@@ -69,12 +69,20 @@
   .card-glass {
     @apply rounded-2xl border border-[var(--line-strong)] bg-[var(--panel-3)]/80;
   }
+  /* Aliases — older pages use `surface-glass` / `surface-soft` names. */
+  .surface-glass {
+    @apply rounded-2xl border border-[var(--line-strong)] bg-[var(--panel-3)]/80;
+  }
+  .surface-soft {
+    @apply rounded-xl border border-[var(--line)] bg-[var(--panel)];
+  }
 
   /* Display type — Bebas Neue, condensed, dramatic */
   .display-heading {
     @apply font-display leading-[0.95] tracking-[0.01em] text-[var(--text)];
   }
   .display-accent { color: var(--accent); }
+  .display-yellow { color: var(--accent); }
 
   /* Eyebrows and labels */
   .eyebrow {
@@ -94,6 +102,9 @@
     @apply w-full rounded-lg border border-[var(--line)] bg-[var(--bg-3)] px-3.5 py-3 text-[0.95rem] text-[var(--text)] shadow-sm outline-none transition placeholder:text-[var(--muted-2)] placeholder:italic focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(224,178,90,0.18)];
   }
   .field-textarea { @apply min-h-[88px] resize-y; }
+  .field-hint {
+    @apply mt-1.5 block text-[11px] leading-5 text-[var(--muted-2)];
+  }
   .field-select {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%23e0b25a' stroke-width='1.5' stroke-linecap='round'/></svg>");
     background-repeat: no-repeat;
@@ -111,6 +122,16 @@
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--accent)];
+  }
+  /* Legacy aliases — used by admin/registration pages. */
+  .primary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[#1a0c10] transition hover:bg-[var(--accent-hover)] hover:shadow-[0_0_24px_rgba(224,178,90,0.32)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55;
+  }
+  .secondary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[var(--line-strong)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[rgba(224,178,90,0.06)] active:translate-y-px;
+  }
+  .ghost-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--accent)];
   }
 
   /* Tag/chip */

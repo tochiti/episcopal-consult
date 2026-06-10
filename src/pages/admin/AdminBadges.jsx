@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Award, Filter, Printer } from 'lucide-react';
+import AdminPageHeader from '../../components/AdminPageHeader';
 import { composeDiocese, composeFullName, normalizeStatus } from '../../lib/registrations';
 
 const BADGE_TYPES = [
@@ -51,21 +52,19 @@ export default function AdminBadges() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow">Operations</p>
-          <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-            Print <span className="display-yellow">badges.</span>
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            Generate accreditation badges for approved delegates. Each badge shows the delegate's photo, title, and diocese.
-            Print two A4 sheets per page, six badges per sheet, cut along the guides.
-          </p>
-        </div>
-        <button type="button" onClick={handlePrint} className="primary-button" disabled={filtered.length === 0}>
-          <Printer className="h-4 w-4" /> Print {filtered.length} badge{filtered.length === 1 ? '' : 's'}
-        </button>
-      </header>
+      <AdminPageHeader
+        eyebrow="Operations"
+        title="Print"
+        accent="badges."
+        copy="Generate accreditation badges for approved delegates. Each badge shows the delegate's photo, title, and diocese. Print two A4 sheets per page, six badges per sheet, cut along the guides."
+        actions={[
+          {
+            label: `Print ${filtered.length} badge${filtered.length === 1 ? '' : 's'}`,
+            icon: Printer,
+            onClick: handlePrint,
+          },
+        ]}
+      />
 
       {/* Filter chips */}
       <div className="surface-glass flex flex-wrap items-center gap-2 px-3 py-2.5">

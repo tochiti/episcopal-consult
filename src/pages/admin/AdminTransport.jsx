@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Car, Check, Plane, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import AdminPageHeader from '../../components/AdminPageHeader';
 import {
   deleteTransport,
   getTransports,
@@ -100,22 +101,20 @@ export default function AdminTransport() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow">Operations</p>
-          <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-            Airport <span className="display-yellow">pickups.</span>
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            Schedule vehicles for arriving delegates. {counts.total} delegates have requested pickup, {counts.assigned} of whom are
-            already assigned to a vehicle.
-          </p>
-        </div>
-        <button type="button" onClick={() => setShowForm((v) => !v)} className="primary-button">
-          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showForm ? 'Close' : 'Add vehicle'}
-        </button>
-      </header>
+      <AdminPageHeader
+        eyebrow="Operations"
+        title="Airport"
+        accent="pickups."
+        copy={`Schedule vehicles for arriving delegates. ${counts.total} delegates have requested pickup, ${counts.assigned} of whom are already assigned to a vehicle.`}
+        actions={[
+          {
+            label: showForm ? 'Close' : 'Add vehicle',
+            icon: showForm ? X : Plus,
+            kind: showForm ? 'outline' : 'primary',
+            onClick: () => setShowForm((v) => !v),
+          },
+        ]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <KPI label="Pickup requests" value={counts.total} icon={Plane} />

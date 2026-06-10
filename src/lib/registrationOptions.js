@@ -1,39 +1,78 @@
 /* ---------------------------------------------------------------------------
    Anglican Church of Nigeria — administrative mapping.
    14 provinces × 176 dioceses (per Church of Nigeria records).
-   Each diocese is locked to its province. The registration form cascades
-   diocese choices from the chosen province. Selecting "Other" exposes a
-   free-text input for the diocese.
+   18 honorifics + an "Other (specify)" escape hatch.
+   9 standalone "Other" bodies (theological colleges, missionary dioceses,
+   CONNAM, etc.) — surfaced when the delegate picks "Other (specify)" for
+   province. Cascading select: province → diocese; if province is "Other",
+   the next field is a "Body" select with the 9 standalone bodies + a free-
+   text fallback.
+
+   Source of truth: church_of_nigeria_normalized_registration_options.md
    --------------------------------------------------------------------------- */
+
+export const HONORIFICS = [
+  'Mr.',
+  'Mrs.',
+  'Ms.',
+  'Dr.',
+  'Prof.',
+  'Sir.',
+  'Dame',
+  'Evang.',
+  "Rev'd",
+  "Rev'd Dr.",
+  'Canon',
+  'Canon Dr.',
+  'Ven.',
+  'Ven. Dr.',
+  "Rt. Rev'd",
+  "Rt. Rev'd Dr.",
+  "Most Rev'd",
+  "Most Rev'd Dr.",
+];
+
+/* Append "Other (specify)" so users can type a custom honorific. */
+export const HONORIFICS_OPTIONS = [...HONORIFICS, 'Other (specify)'];
+
+export const HONORIFIC_OTHER = 'Other (specify)';
 
 export const PROVINCE_DIOCESE_MAP = {
   'Province of Aba': [
     'Aba',
     'Aba Ngwa North',
     'Arochukwu/Ohafia',
-    'Isiala-Ngwa',
+    'Ikwuano',
+    'Isiala Ngwa',
     'Isiala-Ngwa South',
     'Isikwuato',
-    'Ngbo',
     'Ukwa',
     'Umuahia',
   ],
   'Province of Abuja': [
     'Abuja',
+    'Gboko',
     'Gwagwalada',
-    'Keffi',
+    'Kafanchan',
+    'Keffi-Karshi',
     'Kubwa',
+    'Kwoi',
     'Lafia',
+    'Makurdi',
     'Nasarawa',
+    'Otukpo',
+    'Zaki-Biam',
+    'Zonkwa',
   ],
   'Province of Bendel': [
+    'Akoko Edo',
     'Asaba',
     'Benin',
     'Esan',
     'Etsako',
     'Ika',
-    'Ishan',
-    'Northern Izon',
+    'Ndokwa',
+    'Oleh',
     'Ozoro',
     'Sabongidda-Ora',
     'Sapele',
@@ -49,19 +88,21 @@ export const PROVINCE_DIOCESE_MAP = {
     'Enugu',
     'Enugu North',
     'Ikwo',
+    'Ngbo',
     'Nike',
     'Nsukka',
     'Oji River',
     'Udi',
   ],
   'Province of Ibadan': [
-    'Egba',
-    'Egba West',
+    'Ajayi Crowther',
     'Ibadan',
     'Ibadan North',
     'Ibadan South',
     'Ife',
     'Ife East',
+    'Ijesha North',
+    'Ijesa North East',
     'Ilesa',
     'Ilesa South West',
     'Ogbomoso',
@@ -77,7 +118,6 @@ export const PROVINCE_DIOCESE_MAP = {
     'Bauchi',
     'Bukuru',
     'Damaturu',
-    'Dutse',
     'Gombe',
     'Jalingo',
     'Jos',
@@ -88,38 +128,39 @@ export const PROVINCE_DIOCESE_MAP = {
     'Yola',
   ],
   'Province of Kaduna': [
+    'Bari',
+    'Dutse',
     'Gusau',
     'Ikara',
     'Kaduna',
-    'Kafanchan',
     'Kano',
     'Katsina',
     'Kebbi',
-    'Kwoi',
     'Sokoto',
-    'Southern Kaduna Missionary Diocese',
     'Wusasa',
     'Zaria',
-    'Zonkwa',
     'Zuru',
   ],
   'Province of Kwara': [
+    'Ekiti Kwara',
     'Igbomina',
     'Igbomina West',
-    'Idoani',
     'Jebba',
     'Kwara',
+    'New Bussa',
     'Offa',
     'Omu-Aran',
     'Oyun',
   ],
   'Province of Lagos': [
-    'Ajayi Crowther',
     'Awori',
     'Badagry',
+    'Egba',
+    'Egba West',
     'Ifo',
     'Ijebu',
     'Ijebu North',
+    'Ijebu South West',
     'Lagos',
     'Lagos Mainland',
     'Lagos South West',
@@ -128,60 +169,59 @@ export const PROVINCE_DIOCESE_MAP = {
     'Yewa',
   ],
   'Province of Lokoja': [
-    'Evo',
+    'Bida',
+    'Doko',
     'Idah',
     'Ijumu',
     'Kabba',
+    'Kontagora',
+    'Kutigi',
     'Lokoja',
+    'Minna',
     'Ogori-Magongo',
     'Okene',
   ],
-  'Province of Niger': [
-    'Bida',
-    'Doko',
-    'Kontagora',
-    'Kutigi',
-    'Minna',
-    'New Bussa',
+  'Province of the Niger': [
+    'Aguata',
+    'Amichi',
+    'Awka',
+    'Ihiala',
+    'Niger East / Mbamili',
     'Niger West',
+    'Nnewi',
+    'Ogbaru',
+    'On the Niger',
   ],
   'Province of Niger Delta': [
     'Ahoada',
-    'Bari',
     'Calabar',
-    'Diocese on the Coast',
     'Eket',
     'Etche',
+    'Evo',
     'Ikom',
     'Ikwerre',
     'Kalabari',
-    'Ndokwa',
     'Niger Delta',
     'Niger Delta North',
     'Niger Delta West',
-    'Ogbaru',
+    'Northern Izon',
     'Ogbia',
-    'Ogoni',
     'Ogoja',
-    'Ohaji/Egbema',
+    'Ogoni',
     'Okrika',
     'Omoku',
-    'On the Lake',
-    'On the Niger',
     'Uyo',
   ],
   'Province of Ondo': [
     'Akoko',
-    'Akoko Edo',
     'Akure',
+    'Diocese on the Coast',
     'Ekiti',
-    'Ekiti Kwara',
     'Ekiti Oke',
     'Ekiti South',
     'Ekiti West',
     'Idanre',
-    'Ijesa North East',
-    'Ijesha North',
+    'Idoani',
     'Ilaje',
     'Ile-Oluji',
     'Irele-Eseodo',
@@ -189,38 +229,48 @@ export const PROVINCE_DIOCESE_MAP = {
     'Owo',
   ],
   'Province of Owerri': [
-    'Aguata',
-    'Amichi',
-    'Awka',
     'Egbu',
     'Ideato',
-    'Ihiala',
     'Ikeduru',
-    'Ikka',
+    'Isi Mbano / Isimbano',
     'Mbaise',
-    'Mbamili',
-    'Nnewi',
+    'Ohaji/Egbema',
     'Okigwe',
-    'Okigwe North',
     'Okigwe South',
-    'Omambala',
+    'On the Lake',
     'Orlu',
     'Oru',
     'Owerri',
   ],
 };
 
-/* "Other (specify)" is appended programmatically so users can type a diocese
-   that doesn't appear in the official list. The same applies to provinces —
-   selecting "Other" surfaces a free-text input. */
+/* Standalone bodies that don't sit under any province — theological
+   colleges, missionary dioceses, and a couple of administrative units.
+   Surfaced when the delegate picks "Other (specify)" for province. */
+export const OTHERS_BODIES = [
+  'Archbishop Vining College of Theology, Akure',
+  'Bishop Crowther College of Theology, Okene',
+  'CONNAM',
+  'Crowther Graduate Theological Seminary, Abeokuta',
+  'Immanuel College of Theology, Ibadan',
+  'Nomadic',
+  'St. Francis of Assisi, Wusasa',
+  'Administrative Diocese Omambala',
+  'Southern Kaduna Missionary Diocese',
+];
+
+export const OTHERS_BODIES_OPTIONS = [...OTHERS_BODIES, 'Other (specify)'];
+
 export const PROVINCE_OPTIONS = [
   ...Object.keys(PROVINCE_DIOCESE_MAP),
   'Other (specify)',
 ];
 
+export const PROVINCE_OTHER = 'Other (specify)';
+
 export const getDiocesesForProvince = (province) => {
   if (!province) return [];
-  if (province === 'Other (specify)') return [];
+  if (province === PROVINCE_OTHER) return [];
   return PROVINCE_DIOCESE_MAP[province] || [];
 };
 

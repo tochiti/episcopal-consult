@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Crown, Heart, Printer, ShieldCheck, Utensils } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import AdminPageHeader from '../../components/AdminPageHeader';
 import { updateDelegate } from '../../db';
 import { composeDiocese, composeFullName, normalizeStatus } from '../../lib/registrations';
 import { VIP_LEVELS } from '../../lib/registrationOptions';
@@ -51,21 +52,15 @@ export default function AdminProtocol() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow">Operations</p>
-          <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-            Protocol <span className="display-yellow">briefing.</span>
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            Briefing notes for the protocol team — VIP flags, dietary needs, special requirements, and per-delegate notes.
-            Print a clean briefing pack for the protocol desk.
-          </p>
-        </div>
-        <button type="button" onClick={handlePrint} className="primary-button" disabled={visible.length === 0}>
-          <Printer className="h-4 w-4" /> Print briefing pack
-        </button>
-      </header>
+      <AdminPageHeader
+        eyebrow="Operations"
+        title="Protocol"
+        accent="briefing."
+        copy="Briefing notes for the protocol team — VIP flags, dietary needs, special requirements, and per-delegate notes. Print a clean briefing pack for the protocol desk."
+        actions={[
+          { label: 'Print briefing pack', icon: Printer, onClick: handlePrint },
+        ]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-4">
         <KPI label="Archbishops" value={counts.archbishop} icon={Crown} accent="text-[var(--accent)]" />

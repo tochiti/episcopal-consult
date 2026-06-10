@@ -20,44 +20,65 @@ export const TRANSPORTS_COLLECTION = 'episcopal_consultation_transports';
 
 const trim = (v) => (typeof v === 'string' ? v.trim() : v);
 
-const buildPayload = (data) => ({
-  title: trim(data.title),
-  firstName: trim(data.firstName),
-  lastName: trim(data.lastName),
-  position: trim(data.position),
-  province: trim(data.province),
-  diocese: trim(data.diocese),
-  dioceseOther: trim(data.dioceseOther),
-  whatsappNumber: trim(data.whatsappNumber),
-  emailAddress: trim(data.emailAddress),
-  emailAddressNormalized: trim(data.emailAddress || '').toLowerCase(),
-  dateOfArrival: trim(data.dateOfArrival),
-  modeOfTravel: trim(data.modeOfTravel),
-  requireInternalTransport: data.requireInternalTransport || 'No',
-  comingWithDriverEscort: data.comingWithDriverEscort || 'No',
-  driverName: data.comingWithDriverEscort === 'Yes' ? trim(data.driverName) : '',
-  driverPhoneNumber: data.comingWithDriverEscort === 'Yes' ? trim(data.driverPhoneNumber) : '',
-  escortName: data.comingWithDriverEscort === 'Yes' ? trim(data.escortName) : '',
-  escortPhoneNumber: data.comingWithDriverEscort === 'Yes' ? trim(data.escortPhoneNumber) : '',
-  passportPhoto: data.passportPhoto || null,
-  passportMime: data.passportMime || null,
-  passportSizeBytes: data.passportSizeBytes || 0,
-  /* Operations */
-  accommodationId: data.accommodationId || null,
-  roomNumber: trim(data.roomNumber),
-  checkInDate: trim(data.checkInDate),
-  checkOutDate: trim(data.checkOutDate),
-  transportId: data.transportId || null,
-  pickupConfirmed: Boolean(data.pickupConfirmed),
-  /* Protocol */
-  vipLevel: data.vipLevel || 'regular',
-  dietaryRequirements: trim(data.dietaryRequirements),
-  specialNeeds: trim(data.specialNeeds),
-  protocolNotes: trim(data.protocolNotes),
-  status: 'Pending',
-  batchId: data.batchId || null,
-  createdAt: serverTimestamp(),
-});
+const buildPayload = (data) => {
+  /* "Other (specify)" honorifics are resolved to the typed-in text so
+     the saved document carries the real honorific, not the literal
+     string "Other (specify)". */
+  const resolvedTitle =
+    data.title === 'Other (specify)' ? trim(data.titleOther) : trim(data.title);
+
+  /* "Other (specify)" provinces cascade to: body (one of the 9
+     standalone bodies) → dioceseOther (free text). The saved document
+     carries all three fields; composeDiocese() handles the resolution
+     on the read side. */
+  const isOtherProvince = data.province === 'Other (specify)';
+  const resolvedDiocese = isOtherProvince ? trim(data.body) : trim(data.diocese);
+  const resolvedDioceseOther =
+    isOtherProvince && data.body === 'Other (specify)' ? trim(data.dioceseOther) : '';
+
+  return {
+    title: resolvedTitle,
+    titleOther: data.title === 'Other (specify)' ? trim(data.titleOther) : '',
+    firstName: trim(data.firstName),
+    lastName: trim(data.lastName),
+    position: trim(data.position),
+    province: trim(data.province),
+    diocese: resolvedDiocese,
+    body: isOtherProvince ? trim(data.body) : '',
+    dioceseOther: resolvedDioceseOther,
+    whatsappNumber: trim(data.whatsappNumber),
+    emailAddress: trim(data.emailAddress),
+    emailAddressNormalized: trim(data.emailAddress || '').toLowerCase(),
+    dateOfArrival: trim(data.dateOfArrival),
+    modeOfTravel: trim(data.modeOfTravel),
+    requireInternalTransport: data.requireInternalTransport || 'No',
+    comingWithDriverEscort: data.comingWithDriverEscort || 'No',
+    driverName: data.comingWithDriverEscort === 'Yes' ? trim(data.driverName) : '',
+    driverPhoneNumber:
+      data.comingWithDriverEscort === 'Yes' ? trim(data.driverPhoneNumber) : '',
+    escortName: data.comingWithDriverEscort === 'Yes' ? trim(data.escortName) : '',
+    escortPhoneNumber:
+      data.comingWithDriverEscort === 'Yes' ? trim(data.escortPhoneNumber) : '',
+    passportPhoto: data.passportPhoto || null,
+    passportMime: data.passportMime || null,
+    passportSizeBytes: data.passportSizeBytes || 0,
+    /* Operations */
+    accommodationId: data.accommodationId || null,
+    roomNumber: trim(data.roomNumber),
+    checkInDate: trim(data.checkInDate),
+    checkOutDate: trim(data.checkOutDate),
+    transportId: data.transportId || null,
+    pickupConfirmed: Boolean(data.pickupConfirmed),
+    /* Protocol */
+    vipLevel: data.vipLevel || 'regular',
+    dietaryRequirements: trim(data.dietaryRequirements),
+    specialNeeds: trim(data.specialNeeds),
+    protocolNotes: trim(data.protocolNotes),
+    status: 'Pending',
+    batchId: data.batchId || null,
+    createdAt: serverTimestamp(),
+  };
+};
 
 export const saveRegistration = async (data) => {
   try {

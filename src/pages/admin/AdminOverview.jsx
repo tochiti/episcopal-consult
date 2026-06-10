@@ -24,9 +24,10 @@ import {
   Users,
 } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
+import AdminPageHeader, { PanelHeader } from '../../components/AdminPageHeader';
 import InsightCard from '../../components/InsightCard';
 import StatusBadge from '../../components/StatusBadge';
-import { composeDiocese, composeFullName, DNDN_FACTS, formatDateTime } from '../../lib/registrations';
+import { composeDiocese, composeFullName, DNDN_FACTS, formatDateTime, PROGRAMME_DATES } from '../../lib/registrations';
 
 const tooltipStyle = {
   contentStyle: {
@@ -237,33 +238,18 @@ export default function AdminOverview() {
 
 function PageHeader({ analytics }) {
   return (
-    <header className="space-y-3">
-      <p className="eyebrow">Secretariat overview</p>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="display-heading text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-            Planning <span className="display-yellow">console.</span>
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            Live picture of the {DNDN_FACTS.name} registration pipeline. Print badges, allocate rooms, schedule pickups, and
-            brief the protocol team.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="tag"><Bus className="h-3 w-3" /> {analytics.totals.needTransport} pickups needed</span>
-          <span className="tag"><Plane className="h-3 w-3" /> {analytics.travelModes.find((m) => m.name === 'Air')?.value || 0} by air</span>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function PanelHeader({ label, title }) {
-  return (
-    <div>
-      <p className="eyebrow">{label}</p>
-      <h2 className="display-heading mt-1.5 text-xl text-[var(--text)]">{title}.</h2>
-    </div>
+    <AdminPageHeader
+      eyebrow="Secretariat overview"
+      title="Planning"
+      accent="console."
+      copy={`Live picture of the ${DNDN_FACTS.name} registration pipeline. Print badges, allocate rooms, schedule pickups, and brief the protocol team.`}
+      tags={[
+        PROGRAMME_DATES.displayUpper,
+        `${analytics.totals.needTransport} pickups needed`,
+        `${analytics.travelModes.find((m) => m.name === 'Air')?.value || 0} arriving by air`,
+        `${analytics.totals.approved} approved`,
+      ]}
+    />
   );
 }
 

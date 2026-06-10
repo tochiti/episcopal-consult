@@ -1,8 +1,8 @@
 /* ---------------------------------------------------------------------------
    Episcopal Consult DNDN — registration helpers.
    Field model on each delegate document:
-     - Identity:        title, firstName, lastName, position
-     - Geography:       province, diocese, dioceseOther
+     - Identity:        title, titleOther, firstName, lastName, position
+     - Geography:       province, diocese, body, dioceseOther
      - Contact:         whatsappNumber, emailAddress, emailAddressNormalized
      - Travel:          dateOfArrival, modeOfTravel, requireInternalTransport,
                         comingWithDriverEscort, driverName, driverPhoneNumber,
@@ -12,6 +12,11 @@
                         transportId, pickupConfirmed
      - Protocol:        vipLevel, dietaryRequirements, specialNeeds, protocolNotes
      - Meta:            status, batchId, createdAt
+
+   The "body" field is used when province is "Other (specify)" and the
+   delegate picks one of the 9 standalone bodies (theological colleges,
+   missionary dioceses, etc.). If the body is also "Other (specify)" we
+   fall through to "dioceseOther" (free text).
    --------------------------------------------------------------------------- */
 
 export const DNDN_FACTS = {
@@ -24,6 +29,19 @@ export const DNDN_FACTS = {
   state: 'Rivers State',
   country: 'Nigeria',
   copyright: 'DNDN 2026',
+};
+
+/* Programme dates — the Episcopal Consultation runs Monday 13 July
+   through Friday 17 July 2026, hosted by the Diocese of Niger Delta
+   North. Surfaced in the homepage hero, the registration form hero,
+   and the public footer. */
+export const PROGRAMME_DATES = {
+  start: '2026-07-13',
+  end: '2026-07-17',
+  display: 'Monday, 13th to Friday, 17th July 2026',
+  displayUpper: 'MONDAY, 13TH TO FRIDAY, 17TH JULY 2026',
+  short: '13–17 July 2026',
+  iso: '2026-07-13/2026-07-17',
 };
 
 export const normalizeStatus = (status) => status || 'Pending';
@@ -65,14 +83,24 @@ export const getStatusMeta = (status) => {
 
 export const composeFullName = (r) => {
   if (!r) return '';
-  const title = r.title ? `${r.title} ` : '';
+  /* Honorific — "Other (specify)" cases use the typed-in text. */
+  const titleValue =
+    r.title === 'Other (specify)' ? r.titleOther || '' : r.title || '';
+  const title = titleValue ? `${titleValue} ` : '';
   const name = [r.firstName, r.lastName].filter(Boolean).join(' ');
   return `${title}${name}`.trim();
 };
 
 export const composeDiocese = (r) => {
   if (!r) return '';
-  if (r.province === 'Other (specify)' && r.dioceseOther) return r.dioceseOther;
+  /* When the delegate picked "Other (specify)" for province, they either
+     picked one of the 9 standalone bodies (→ body) or typed free text
+     (→ dioceseOther). Order: body, dioceseOther, diocese. */
+  if (r.province === 'Other (specify)') {
+    if (r.body && r.body !== 'Other (specify)') return r.body;
+    if (r.dioceseOther) return r.dioceseOther;
+    return '';
+  }
   return r.diocese || '';
 };
 

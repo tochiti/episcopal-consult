@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { DNDN_FACTS } from '../lib/registrations';
+import { Calendar } from 'lucide-react';
+import { DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
 
 export default function PublicFooter() {
   return (
@@ -18,8 +19,12 @@ export default function PublicFooter() {
           <Link to="/register" className="btn-ghost text-[var(--accent)]">Register</Link>
         </nav>
       </div>
-      <div className="shell-container flex flex-col items-center justify-between gap-2 border-t border-[var(--line)] py-4 text-[11px] text-[var(--muted-2)] sm:flex-row">
+      <div className="shell-container flex flex-col items-center justify-between gap-3 border-t border-[var(--line)] py-4 text-[11px] text-[var(--muted-2)] sm:flex-row">
         <p className="font-mono uppercase tracking-[0.24em]">© DNDN 2026 · {DNDN_FACTS.name}</p>
+        <p className="inline-flex items-center gap-2 font-mono uppercase tracking-[0.24em] text-[var(--accent)]">
+          <Calendar className="h-3 w-3" />
+          {PROGRAMME_DATES.display}
+        </p>
         <p className="font-mono uppercase tracking-[0.24em]">Church of Nigeria (Anglican Communion)</p>
       </div>
     </footer>

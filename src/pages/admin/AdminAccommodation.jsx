@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BedDouble, Check, Hotel, Plus, Save, Trash2, X } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import AdminPageHeader from '../../components/AdminPageHeader';
 import {
   deleteAccommodation,
   getAccommodations,
@@ -93,22 +94,20 @@ export default function AdminAccommodation() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow">Operations</p>
-          <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-            Allocate <span className="display-yellow">accommodation.</span>
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            Add hotels and hostels, then assign each delegate a room. {counts.unassigned} of {delegates.length} delegates are
-            still unassigned.
-          </p>
-        </div>
-        <button type="button" onClick={() => setShowForm((v) => !v)} className="primary-button">
-          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showForm ? 'Close' : 'Add hotel'}
-        </button>
-      </header>
+      <AdminPageHeader
+        eyebrow="Operations"
+        title="Allocate"
+        accent="accommodation."
+        copy={`Add hotels and hostels, then assign each delegate a room. ${counts.unassigned} of ${delegates.length} delegates are still unassigned.`}
+        actions={[
+          {
+            label: showForm ? 'Close' : 'Add hotel',
+            icon: showForm ? X : Plus,
+            kind: showForm ? 'outline' : 'primary',
+            onClick: () => setShowForm((v) => !v),
+          },
+        ]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <KPI label="Total delegates" value={delegates.length} icon={BedDouble} />

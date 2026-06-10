@@ -1,6 +1,6 @@
-import { ArrowRight, ClipboardList, Plane, BedDouble, Phone, ShieldCheck, Building2, Crown, Mail, MapPin, User } from 'lucide-react';
+import { ArrowRight, Calendar, ClipboardList, Plane, BedDouble, Phone, ShieldCheck, Building2, Crown, Mail, MapPin, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { DNDN_FACTS } from '../lib/registrations';
+import { DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
 import PublicFooter from '../components/PublicFooter';
 
 const steps = [
@@ -25,9 +25,9 @@ const steps = [
 ];
 
 const hostFacts = [
+  { lbl: 'Programme', value: PROGRAMME_DATES.short, Icon: Calendar },
   { lbl: 'Diocese', value: DNDN_FACTS.name, Icon: Building2 },
   { lbl: 'Host Bishop', value: DNDN_FACTS.hostBishop, Icon: User },
-  { lbl: 'Cathedral', value: DNDN_FACTS.cathedral, Icon: MapPin },
   { lbl: 'City', value: `${DNDN_FACTS.city}, ${DNDN_FACTS.state}`, Icon: MapPin },
 ];
 
@@ -149,11 +149,16 @@ export default function LandingPage() {
                 <span className="display-accent">Consultation</span>
               </h1>
 
-              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.4em] text-[var(--muted-2)] sm:text-xs">
+              <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(224,178,90,0.06)] px-3.5 py-1.5 font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--accent)]">
+                <Calendar className="h-3.5 w-3.5" />
+                {PROGRAMME_DATES.displayUpper}
+              </p>
+
+              <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--muted-2)] sm:text-[11px]">
                 Registration Portal · 2026
               </p>
 
-              <p className="mt-7 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+              <p className="mt-6 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
                 Registration portal for delegates attending the Episcopal Consultation of the Church of Nigeria
                 (Anglican Communion). Submit your details and the host diocese will plan around you.
               </p>

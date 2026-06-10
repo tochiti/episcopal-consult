@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Download, Filter, Search, X } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
+import AdminPageHeader from '../../components/AdminPageHeader';
 import StatusBadge from '../../components/StatusBadge';
-import { buildRegistrationFilter, composeFullName, downloadRegistrationsCsv } from '../../lib/registrations';
+import { buildRegistrationFilter, composeFullName, downloadRegistrationsCsv, PROGRAMME_DATES } from '../../lib/registrations';
 import { PROVINCE_OPTIONS, TRAVEL_MODES } from '../../lib/registrationOptions';
 
 export default function AdminRegistrations() {
@@ -52,38 +53,30 @@ export default function AdminRegistrations() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="space-y-3">
-        <p className="eyebrow">Registrations</p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="display-heading text-3xl leading-[0.95] text-[var(--text)] sm:text-4xl lg:text-5xl">
-              Delegate <span className="display-yellow">list.</span>
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-              Search, filter, and open a record. {filteredRegistrations.length} of {registrations.length} shown.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className="secondary-button lg:hidden"
-            >
-              <Filter className="h-4 w-4" /> Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const stamp = new Date().toISOString().slice(0, 10);
-                downloadRegistrationsCsv(filteredRegistrations, `episcopal_consult_registrations_${stamp}.csv`);
-              }}
-              className="secondary-button"
-            >
-              <Download className="h-4 w-4" /> Export CSV
-            </button>
-          </div>
-        </div>
-      </header>
+      <AdminPageHeader
+        eyebrow="Registrations"
+        title="Delegate"
+        accent="list."
+        copy={`Search, filter, and open a record. ${filteredRegistrations.length} of ${registrations.length} shown.`}
+        tags={[PROGRAMME_DATES.displayUpper]}
+        actions={[
+          {
+            label: `Filters${activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}`,
+            icon: Filter,
+            kind: 'outline',
+            onClick: () => setShowFilters((v) => !v),
+          },
+          {
+            label: 'Export CSV',
+            icon: Download,
+            kind: 'outline',
+            onClick: () => {
+              const stamp = new Date().toISOString().slice(0, 10);
+              downloadRegistrationsCsv(filteredRegistrations, `episcopal_consult_registrations_${stamp}.csv`);
+            },
+          },
+        ]}
+      />
 
       {/* Filter panel */}
       <section className={`surface-glass p-4 sm:p-5 ${showFilters ? '' : 'hidden lg:block'}`}>

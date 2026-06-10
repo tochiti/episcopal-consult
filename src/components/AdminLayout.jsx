@@ -259,9 +259,19 @@ function SidebarPanel({ registrations, handleSignOut, handleExportCSV }) {
         <img src="/logo.png" alt="DNDN" className="h-10 w-10 rounded-full bg-[var(--text)] p-0.5 shadow-sm" />
         <div>
           <p className="font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">DNDN 2026</p>
-          <p className="font-display text-base leading-none text-[var(--text)]">Secretariat</p>
+          <p className="font-display text-base leading-none text-[var(--text-bright)]">Secretariat</p>
         </div>
       </div>
+
+      {/* Decorative cross rule */}
+      <div className="my-4 flex items-center justify-center gap-2" aria-hidden>
+        <span className="h-px w-8 bg-[var(--line)]" />
+        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
+          <path d="M7 0v14M0 7h14" stroke="var(--accent)" strokeWidth="1" />
+        </svg>
+        <span className="h-px w-8 bg-[var(--line)]" />
+      </div>
+
       <nav className="space-y-3">
         {navGroups.map((group) => (
           <div key={group.label}>
@@ -276,7 +286,7 @@ function SidebarPanel({ registrations, handleSignOut, handleExportCSV }) {
                     `flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition ${
                       isActive
                         ? 'border-[var(--accent)] bg-[var(--accent)] text-[#1a0c10] shadow-[0_0_18px_rgba(224,178,90,0.3)]'
-                        : 'border-transparent text-[var(--muted)] hover:border-[var(--line-strong)] hover:bg-[rgba(224,178,90,0.05)] hover:text-[var(--text)]'
+                        : 'border-transparent text-[var(--muted)] hover:border-[var(--line-strong)] hover:bg-[rgba(224,178,90,0.05)] hover:text-[var(--text-bright)]'
                     }`
                   }
                 >
@@ -288,6 +298,7 @@ function SidebarPanel({ registrations, handleSignOut, handleExportCSV }) {
           </div>
         ))}
       </nav>
+
       <div className="mt-5 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-3.5">
         <p className="eyebrow">Quick snapshot</p>
         <p className="display-heading mt-2 text-3xl text-[var(--accent)]">{total}</p>
@@ -303,7 +314,7 @@ function SidebarPanel({ registrations, handleSignOut, handleExportCSV }) {
           <LogOut className="h-4 w-4" /> Sign out
         </button>
       </div>
-      <p className="mt-4 text-center font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">DNDN 2026</p>
+      <p className="mt-4 text-center font-mono text-[0.55rem] uppercase tracking-[0.22em] text-[var(--muted-2)]">© DNDN 2026</p>
     </div>
   );
 }

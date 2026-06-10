@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Download, FileText, Filter, Printer, X } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import AdminPageHeader from '../../components/AdminPageHeader';
 import { buildRegistrationFilter, downloadRegistrationsCsv, formatDateTime, normalizeStatus, composeDiocese, composeFullName } from '../../lib/registrations';
 import { PROVINCE_OPTIONS, TRAVEL_MODES, VIP_LEVELS } from '../../lib/registrationOptions';
 
@@ -53,26 +54,16 @@ export default function AdminReports() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow">Tools</p>
-          <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-            Planning <span className="display-yellow">reports.</span>
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            Filter the delegate list and export a clean report. Use the same data to print a PDF-ready briefing for the
-            secretariat.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={handleExport} className="secondary-button" disabled={filtered.length === 0}>
-            <Download className="h-4 w-4" /> Export CSV
-          </button>
-          <button type="button" onClick={handlePrint} className="primary-button" disabled={filtered.length === 0}>
-            <Printer className="h-4 w-4" /> Print report
-          </button>
-        </div>
-      </header>
+      <AdminPageHeader
+        eyebrow="Tools"
+        title="Planning"
+        accent="reports."
+        copy="Filter the delegate list and export a clean report. Use the same data to print a PDF-ready briefing for the secretariat."
+        actions={[
+          { label: 'Export CSV', icon: Download, kind: 'outline', onClick: handleExport },
+          { label: 'Print report', icon: Printer, onClick: handlePrint },
+        ]}
+      />
 
       <section className="surface-glass p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">

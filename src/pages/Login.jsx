@@ -1,8 +1,22 @@
 import { useState } from 'react';
-import { LockKeyhole, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Calendar, LockKeyhole, ShieldCheck, ArrowLeft, LogIn } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
+import { DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
+
+function Ornament({ tone = 'gold' }) {
+  const color = tone === 'gold' ? 'var(--accent)' : 'rgba(224,178,90,0.35)';
+  return (
+    <div className="flex items-center justify-center gap-3" aria-hidden>
+      <span className="h-px w-12 sm:w-20" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <path d="M7 0v14M0 7h14" stroke={color} strokeWidth="1" />
+      </svg>
+      <span className="h-px w-12 sm:w-20" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+    </div>
+  );
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,88 +41,138 @@ export default function Login() {
   };
 
   return (
-    <div className="page-shell relative flex items-center py-10">
+    <div className="page-shell relative">
       <span className="hero-blob" style={{ top: '-12%', left: '-8%', width: 460, height: 460, background: 'radial-gradient(circle, rgba(224,178,90,0.18), transparent 70%)' }} aria-hidden />
       <span className="hero-blob" style={{ bottom: '-18%', right: '-8%', width: 520, height: 520, background: 'radial-gradient(circle, rgba(110,29,42,0.55), transparent 70%)' }} aria-hidden />
 
-      <div className="shell-container relative z-10 max-w-5xl">
-        <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr]">
-          <section className="surface-glass relative overflow-hidden p-8 lg:p-10">
-            <p className="eyebrow">Secretariat sign-in</p>
-            <h1 className="display-heading mt-3 text-3xl leading-[0.95] sm:text-4xl">
-              Administrative <span className="display-yellow">console.</span>
-            </h1>
-            <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
-              Review delegate submissions, update approval status, monitor arrival flow, and export the planning report.
-              Restricted to the host diocese secretariat and authorised Provincial Secretaries.
-            </p>
-            <div className="mt-8 flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4">
-              <img src="/logo.png" alt="DNDN" className="h-11 w-11 rounded-full bg-[var(--text)] p-1.5 shadow-sm" />
-              <div>
-                <p className="font-display text-lg leading-none text-[var(--text)]">Episcopal Consult DNDN</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">Secretariat console</p>
-              </div>
+      {/* Header — overlay */}
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
+            <div className="hidden sm:block">
+              <p className="eyebrow">Episcopal Consultation</p>
+              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
             </div>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span className="tag">Firebase auth</span>
-              <span className="tag">Restricted access</span>
-            </div>
-          </section>
-
-          <section className="surface-glass p-6 sm:p-8 lg:p-10">
-            <Link to="/" className="ghost-link">
-              <ArrowLeft className="h-4 w-4" /> Back to homepage
-            </Link>
-            <h2 className="display-heading mt-6 text-3xl text-[var(--text)] sm:text-4xl">Sign in.</h2>
-            <p className="mt-3 text-sm leading-7 text-[var(--muted)]">Use the credentials issued by the secretariat.</p>
-
-            {error ? (
-              <div className="mt-6 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
-                {error}
-              </div>
-            ) : null}
-
-            <form onSubmit={handleLogin} className="mt-8 space-y-5">
-              <label className="block">
-                <span className="field-label">Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  placeholder="secretariat@dndn.org"
-                  className="field-input"
-                  autoComplete="email"
-                />
-              </label>
-              <label className="block">
-                <span className="field-label">Password</span>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  placeholder="••••••••"
-                  className="field-input"
-                  autoComplete="current-password"
-                />
-              </label>
-              <button type="submit" disabled={isLoading} className="primary-button mt-3 w-full">
-                {isLoading ? 'Signing in…' : 'Sign in to console'}
-                {!isLoading ? <LockKeyhole className="h-4 w-4" /> : null}
-              </button>
-            </form>
-
-            <div className="mt-8 flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-4">
-              <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--accent)]" />
-              <p className="text-xs leading-5 text-[var(--muted)]">
-                Sessions are handled by Firebase Authentication. Always sign out on shared devices. Lost access? Contact the
-                system administrator.
-              </p>
-            </div>
-          </section>
+          </Link>
+          <Link to="/" className="ghost-link">
+            <ArrowLeft className="h-4 w-4" /> Back to homepage
+          </Link>
         </div>
-      </div>
+      </header>
+
+      <main className="relative z-10 pt-28 sm:pt-32">
+        <div className="shell-container max-w-5xl">
+          {/* Editorial hero */}
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <Ornament />
+            <p className="eyebrow mt-7">Secretariat sign-in</p>
+            <h1 className="display-heading mt-3 text-[2.5rem] leading-[0.95] sm:text-[4.5rem]">
+              Administrative <span className="display-accent">console.</span>
+            </h1>
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(224,178,90,0.06)] px-3.5 py-1.5 font-mono text-[0.58rem] font-bold uppercase tracking-[0.24em] text-[var(--accent)]">
+              <Calendar className="h-3.5 w-3.5" />
+              {PROGRAMME_DATES.displayUpper}
+            </p>
+            <p className="mt-4 max-w-lg text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+              Review delegate submissions, update approval status, monitor arrival flow, and export the
+              planning report. Restricted to the host diocese secretariat and authorised Provincial Secretaries.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+            {/* Left column — context + seal */}
+            <section className="surface-glass relative overflow-hidden p-6 sm:p-8 lg:p-10">
+              <span
+                aria-hidden
+                className="absolute -right-12 -top-12 h-44 w-44 rounded-full opacity-30 blur-2xl"
+                style={{ background: 'radial-gradient(circle, rgba(224,178,90,0.6), transparent 70%)' }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--line-strong)] bg-[rgba(224,178,90,0.08)] text-[var(--accent)]">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="eyebrow">Host diocese</p>
+                    <p className="mt-1 text-[15px] font-semibold text-[var(--text-bright)]">{DNDN_FACTS.name}</p>
+                  </div>
+                </div>
+                <p className="display-heading mt-6 text-2xl sm:text-3xl text-[var(--text-bright)]">
+                  Operational systems
+                </p>
+                <ul className="mt-5 space-y-3 text-sm leading-6 text-[var(--muted)]">
+                  {[
+                    ['Registrations', 'Delegate list & approval status.'],
+                    ['Badges', 'Printable badge sheets, A4.'],
+                    ['Accommodation', 'Hotels, rooms, check-in dates.'],
+                    ['Transport', 'Vehicles, drivers, pickup dates.'],
+                    ['Protocol', 'VIP levels, dietary, special needs.'],
+                    ['Reports', 'Filtered exports and print reports.'],
+                  ].map(([title, copy]) => (
+                    <li key={title} className="flex items-start gap-2.5">
+                      <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--accent)]" />
+                      <span><span className="text-[var(--text-bright)] font-semibold">{title}</span> — {copy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+
+            {/* Right column — sign-in form */}
+            <section className="surface-glass p-6 sm:p-8 lg:p-10">
+              <p className="eyebrow">Sign in</p>
+              <h2 className="display-heading mt-2 text-2xl text-[var(--text-bright)] sm:text-3xl">Use the secretariat credentials.</h2>
+
+              {error ? (
+                <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              ) : null}
+
+              <form onSubmit={handleLogin} className="mt-7 space-y-5">
+                <label className="block">
+                  <span className="field-label">Email</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    placeholder="secretariat@dndn.org"
+                    className="field-input"
+                    autoComplete="email"
+                  />
+                </label>
+                <label className="block">
+                  <span className="field-label">Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="field-input"
+                    autoComplete="current-password"
+                  />
+                </label>
+                <button type="submit" disabled={isLoading} className="primary-button mt-3 w-full py-3.5">
+                  {isLoading ? 'Signing in…' : 'Sign in to console'}
+                  {!isLoading ? <LogIn className="h-4 w-4" /> : null}
+                </button>
+              </form>
+
+              <div className="mt-7 flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-4">
+                <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--accent)]" />
+                <p className="text-xs leading-5 text-[var(--muted)]">
+                  Sessions are handled by Firebase Authentication. Always sign out on shared devices. Lost access?
+                  Contact the system administrator.
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

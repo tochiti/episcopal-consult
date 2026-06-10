@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  Calendar,
   CheckCircle2,
   CircleAlert,
   Eye,
@@ -14,9 +15,13 @@ import { Link } from 'react-router-dom';
 import { saveRegistration, saveRegistrationBatch } from '../db';
 import PublicFooter from '../components/PublicFooter';
 import PassportUpload from '../components/PassportUpload';
-import { composeFullName, DNDN_FACTS } from '../lib/registrations';
+import { composeFullName, DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
 import {
+  HONORIFIC_OTHER,
+  HONORIFICS_OPTIONS,
+  OTHERS_BODIES_OPTIONS,
   PROVINCE_OPTIONS,
+  PROVINCE_OTHER,
   TRAVEL_MODES,
   YES_NO,
   getDiocesesForProvince,
@@ -24,11 +29,13 @@ import {
 
 const emptyDelegate = () => ({
   title: '',
+  titleOther: '',
   firstName: '',
   lastName: '',
   position: '',
   province: '',
   diocese: '',
+  body: '',
   dioceseOther: '',
   whatsappNumber: '',
   emailAddress: '',
@@ -48,22 +55,47 @@ const emptyDelegate = () => ({
   passportFileName: '',
 });
 
+/* Validate the affiliation block — handles the cascading
+   province → diocese / body / dioceseOther logic. */
+const affiliationIsFilled = (d) => {
+  if (!d.province) return false;
+  if (d.province === PROVINCE_OTHER) {
+    if (!d.body) return false;
+    if (d.body === HONORIFIC_OTHER) return Boolean(d.dioceseOther);
+    return true;
+  }
+  return Boolean(d.diocese);
+};
+
 const isDelegateComplete = (d) => {
-  const baseOk = Boolean(
-    d.title &&
+  /* Honorific: "Other (specify)" needs a typed-in titleOther. */
+  const titleOk = d.title && (d.title !== HONORIFIC_OTHER || d.titleOther);
+  return Boolean(
+    titleOk &&
       d.firstName &&
       d.lastName &&
       d.position &&
-      d.province &&
-      (d.province === 'Other (specify)' ? d.dioceseOther : d.diocese) &&
+      affiliationIsFilled(d) &&
       d.whatsappNumber &&
       d.emailAddress &&
       d.dateOfArrival &&
       d.modeOfTravel &&
       d.passportPhoto
   );
-  return baseOk;
 };
+
+function Ornament({ tone = 'gold' }) {
+  const color = tone === 'gold' ? 'var(--accent)' : 'rgba(224,178,90,0.35)';
+  return (
+    <div className="flex items-center justify-center gap-3" aria-hidden>
+      <span className="h-px w-12 sm:w-20" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <path d="M7 0v14M0 7h14" stroke={color} strokeWidth="1" />
+      </svg>
+      <span className="h-px w-12 sm:w-20" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+    </div>
+  );
+}
 
 export default function RegistrationForm() {
   const [delegates, setDelegates] = useState([emptyDelegate()]);
@@ -82,7 +114,24 @@ export default function RegistrationForm() {
   };
 
   const onProvinceChange = (province) => {
-    updateActive({ province, diocese: '', dioceseOther: '' });
+    updateActive({ province, diocese: '', body: '', dioceseOther: '' });
+  };
+
+  const onTitleChange = (title) => {
+    /* Clear the custom text field unless the user picked "Other (specify)". */
+    if (title === HONORIFIC_OTHER) {
+      updateActive({ title });
+    } else {
+      updateActive({ title, titleOther: '' });
+    }
+  };
+
+  const onBodyChange = (body) => {
+    if (body === HONORIFIC_OTHER) {
+      updateActive({ body });
+    } else {
+      updateActive({ body, dioceseOther: '' });
+    }
   };
 
   const addDelegate = () => {
@@ -138,27 +187,19 @@ export default function RegistrationForm() {
   };
 
   if (view === 'success' && submittedBatch) {
-    return (
-      <SuccessView
-        batch={submittedBatch}
-        onAnother={() => {
-          setDelegates([emptyDelegate()]);
-          setActiveIdx(0);
-          setView('form');
-          setSubmittedBatch(null);
-        }}
-      />
-    );
+    return <SuccessView batch={submittedBatch} onAnother={() => {
+      setDelegates([emptyDelegate()]);
+      setActiveIdx(0);
+      setView('form');
+      setSubmittedBatch(null);
+    }} />;
   }
 
   if (view === 'preview') {
     return (
       <PreviewView
         delegates={delegates}
-        onEdit={(idx) => {
-          setActiveIdx(idx);
-          setView('form');
-        }}
+        onEdit={(idx) => { setActiveIdx(idx); setView('form'); }}
         onBack={() => setView('form')}
         onSubmit={handleSubmit}
         loading={loading}
@@ -169,51 +210,85 @@ export default function RegistrationForm() {
 
   return (
     <div className="page-shell relative pb-32 lg:pb-12">
-      <div className="shell-container relative z-10 max-w-6xl py-8 sm:py-10">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <Link to="/" className="ghost-link">
-              <ArrowLeft className="h-4 w-4" /> Back to homepage
+      {/* Header — transparent overlay like the homepage */}
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
+            <div className="hidden sm:block">
+              <p className="eyebrow">Episcopal Consultation</p>
+              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
+            </div>
+          </Link>
+          <nav className="flex items-center gap-2 sm:gap-3">
+            <Link to="/dashboard" className="hidden text-[13px] font-semibold text-[var(--muted)] transition hover:text-[var(--accent)] sm:inline-flex">
+              Look up status
             </Link>
-            <p className="eyebrow mt-5">Delegate registration</p>
-            <h1 className="display-heading mt-2 text-4xl leading-[1.02] text-[var(--text)] sm:text-5xl lg:text-6xl">
-              Submit your <span className="display-yellow">details.</span>
+            <span className="hidden h-4 w-px bg-[var(--line-strong)] sm:inline-block" aria-hidden />
+            <Link to="/" className="hidden text-[13px] font-semibold text-[var(--muted)] transition hover:text-[var(--accent)] md:inline-flex">
+              Home
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="relative z-10 pt-28 sm:pt-32">
+        <div className="shell-container">
+          {/* Page hero — eyebrow + centred title + programme date + back link */}
+          <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+            <Ornament />
+            <p className="eyebrow mt-7">Delegate registration</p>
+            <h1 className="display-heading mt-3 text-[2.5rem] leading-[0.95] sm:text-[4.5rem]">
+              Submit your <span className="display-accent">details.</span>
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)] sm:text-base">
-              Registration for the {DNDN_FACTS.name} host of the Episcopal Consultation. Add a single delegate or several — the
-              host secretariat receives the whole batch under one reference.
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[rgba(224,178,90,0.06)] px-3.5 py-1.5 font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--accent)]">
+              <Calendar className="h-3.5 w-3.5" />
+              {PROGRAMME_DATES.displayUpper}
+            </p>
+            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+              Registration for the {DNDN_FACTS.name} host of the Episcopal Consultation. Add a single
+              delegate or several — the host secretariat receives the whole batch under one reference.
             </p>
           </div>
-          <div className="surface-soft p-4 sm:max-w-xs">
-            <p className="eyebrow">Already registered?</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Use the status dashboard to look up an existing record.</p>
-            <Link to="/dashboard" className="ghost-link mt-3 text-[var(--accent)]">
-              Open status dashboard <ArrowRight className="h-4 w-4" />
-            </Link>
+
+          {/* Two-column layout — form on the left, sidebar on the right */}
+          <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start lg:gap-8">
+            <div className="min-w-0">
+              <DelegateStrip
+                delegates={delegates}
+                activeIdx={activeIdx}
+                onSelect={setActiveIdx}
+                onAdd={addDelegate}
+                onRemove={removeDelegate}
+                onClearAll={clearAll}
+              />
+
+              <DelegateForm
+                key={activeIdx}
+                delegate={active}
+                onChange={updateActive}
+                onProvinceChange={onProvinceChange}
+                onTitleChange={onTitleChange}
+                onBodyChange={onBodyChange}
+                error={error}
+              />
+
+              <div className="mt-6 hidden items-center justify-end gap-3 lg:flex">
+                <button type="button" onClick={() => addDelegate()} className="secondary-button">
+                  <Plus className="h-4 w-4" /> Add another delegate
+                </button>
+                <button type="button" onClick={goToPreview} disabled={loading} className="primary-button">
+                  <Eye className="h-4 w-4" /> Preview &amp; submit
+                </button>
+              </div>
+            </div>
+
+            <FormSidebar />
           </div>
-        </header>
-
-        <DelegateStrip
-          delegates={delegates}
-          activeIdx={activeIdx}
-          onSelect={setActiveIdx}
-          onAdd={addDelegate}
-          onRemove={removeDelegate}
-          onClearAll={clearAll}
-        />
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.36fr]">
-          <DelegateForm
-            key={activeIdx}
-            delegate={active}
-            onChange={updateActive}
-            onProvinceChange={onProvinceChange}
-            error={error}
-          />
-          <FormSidebar />
         </div>
-      </div>
+      </main>
 
+      {/* Mobile action bar */}
       <div className="mobile-action-bar">
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           <button
@@ -233,24 +308,13 @@ export default function RegistrationForm() {
           </button>
         </div>
       </div>
-
-      <div className="shell-container relative z-10 mt-8 hidden lg:block">
-        <div className="flex items-center justify-end gap-3">
-          <button type="button" onClick={() => addDelegate()} className="secondary-button">
-            <Plus className="h-4 w-4" /> Add another delegate
-          </button>
-          <button type="button" onClick={goToPreview} disabled={loading} className="primary-button">
-            <Eye className="h-4 w-4" /> Preview &amp; submit
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
 
 function DelegateStrip({ delegates, activeIdx, onSelect, onAdd, onRemove, onClearAll }) {
   return (
-    <div className="surface-glass mt-6 flex items-center gap-2 overflow-x-auto px-3 py-2.5">
+    <div className="surface-glass mb-6 flex items-center gap-2 overflow-x-auto px-3 py-2.5">
       {delegates.map((d, i) => {
         const complete = isDelegateComplete(d);
         const name = [d.firstName, d.lastName].filter(Boolean).join(' ') || `Delegate ${i + 1}`;
@@ -310,32 +374,55 @@ function DelegateStrip({ delegates, activeIdx, onSelect, onAdd, onRemove, onClea
   );
 }
 
-function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
+function DelegateForm({ delegate, onChange, onProvinceChange, onTitleChange, onBodyChange, error }) {
   const handle = (field) => (event) => onChange({ [field]: event.target.value });
   const dioceseOptions = useMemo(() => getDiocesesForProvince(delegate.province), [delegate.province]);
-  const isOtherProvince = delegate.province === 'Other (specify)';
+  const isOtherProvince = delegate.province === PROVINCE_OTHER;
+  const isOtherBody = delegate.body === HONORIFIC_OTHER;
+  const isOtherHonorific = delegate.title === HONORIFIC_OTHER;
 
   return (
-    <main className="surface-glass p-5 sm:p-8 lg:p-10">
+    <div className="surface-glass p-5 sm:p-8 lg:p-10">
       {error ? (
-        <div className="mb-6 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
-          {error}
+        <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
+          <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       ) : null}
 
-      <form className="space-y-8" onSubmit={(event) => event.preventDefault()}>
-        <Section title="Identity" no="01" description="Title, name, and the office the delegate holds.">
-          <Field label="Title" required>
-            <input
-              type="text"
+      <form className="space-y-10" onSubmit={(event) => event.preventDefault()}>
+        <Section title="Identity" no="01" description="Honorific, name, and the office the delegate holds.">
+          <Field label="Honorific" required>
+            <select
               value={delegate.title}
-              onChange={handle('title')}
+              onChange={(event) => onTitleChange(event.target.value)}
               required
               autoComplete="honorific-prefix"
-              placeholder="Most Rev. and Rt. Rev."
-              className="field-input"
-            />
+              className="field-select"
+            >
+              <option value="">Select honorific</option>
+              {HONORIFICS_OPTIONS.map((h) => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
           </Field>
+
+          {isOtherHonorific ? (
+            <Field label="Custom honorific" required hint="Type the full honorific exactly as it should appear on the badge.">
+              <input
+                type="text"
+                value={delegate.titleOther || ''}
+                onChange={handle('titleOther')}
+                required
+                autoFocus
+                autoComplete="honorific-prefix"
+                placeholder="e.g. Hon., Barr., Ven. Mrs."
+                className="field-input"
+              />
+            </Field>
+          ) : (
+            <div className="hidden sm:block" aria-hidden />
+          )}
 
           <Field label="First Name" required>
             <input
@@ -373,7 +460,11 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
           </Field>
         </Section>
 
-        <Section title="Province & Diocese" no="02" description="Select the province first. Choose Other (specify) to type in a diocese that isn't listed.">
+        <Section
+          title="Province & Diocese"
+          no="02"
+          description="Select the province first, then the diocese. Choose Other (specify) for theological colleges, missionary dioceses, or bodies that don't fit under a province."
+        >
           <Field label="Province" required>
             <select
               value={delegate.province}
@@ -389,16 +480,39 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
           </Field>
 
           {isOtherProvince ? (
-            <Field label="Diocese" required hint="Type the diocese or body you represent.">
-              <input
-                type="text"
-                value={delegate.dioceseOther}
-                onChange={handle('dioceseOther')}
+            <>
+              <Field
+                label="Body / Affiliation"
                 required
-                placeholder="e.g. Diocese of…"
-                className="field-input"
-              />
-            </Field>
+                hint="Theological colleges, CONNAM, missionary dioceses and similar."
+              >
+                <select
+                  value={delegate.body}
+                  onChange={(event) => onBodyChange(event.target.value)}
+                  required
+                  className="field-select"
+                >
+                  <option value="">Select body</option>
+                  {OTHERS_BODIES_OPTIONS.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </Field>
+
+              {isOtherBody ? (
+                <Field label="Custom body" required hint="Type the body or institution you represent.">
+                  <input
+                    type="text"
+                    value={delegate.dioceseOther}
+                    onChange={handle('dioceseOther')}
+                    required
+                    autoFocus
+                    placeholder="e.g. Diocese of…"
+                    className="field-input"
+                  />
+                </Field>
+              ) : null}
+            </>
           ) : (
             <Field label="Diocese" required hint={!delegate.province ? 'Choose a province first.' : null}>
               <select
@@ -490,44 +604,20 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
 
           {delegate.comingWithDriverEscort === 'Yes' ? (
             <div className="sm:col-span-2">
-              <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4">
+              <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4 sm:p-5">
                 <p className="eyebrow">Driver / escort details</p>
                 <div className="mt-3 grid gap-4 sm:grid-cols-2">
                   <Field label="Driver's Name">
-                    <input
-                      type="text"
-                      value={delegate.driverName}
-                      onChange={handle('driverName')}
-                      placeholder="Full name"
-                      className="field-input"
-                    />
+                    <input type="text" value={delegate.driverName} onChange={handle('driverName')} placeholder="Full name" className="field-input" />
                   </Field>
                   <Field label="Driver's Phone">
-                    <input
-                      type="tel"
-                      value={delegate.driverPhoneNumber}
-                      onChange={handle('driverPhoneNumber')}
-                      placeholder="+234…"
-                      className="field-input"
-                    />
+                    <input type="tel" value={delegate.driverPhoneNumber} onChange={handle('driverPhoneNumber')} placeholder="+234…" className="field-input" />
                   </Field>
                   <Field label="Escort's Name">
-                    <input
-                      type="text"
-                      value={delegate.escortName}
-                      onChange={handle('escortName')}
-                      placeholder="Full name"
-                      className="field-input"
-                    />
+                    <input type="text" value={delegate.escortName} onChange={handle('escortName')} placeholder="Full name" className="field-input" />
                   </Field>
                   <Field label="Escort's Phone">
-                    <input
-                      type="tel"
-                      value={delegate.escortPhoneNumber}
-                      onChange={handle('escortPhoneNumber')}
-                      placeholder="+234…"
-                      className="field-input"
-                    />
+                    <input type="tel" value={delegate.escortPhoneNumber} onChange={handle('escortPhoneNumber')} placeholder="+234…" className="field-input" />
                   </Field>
                 </div>
               </div>
@@ -569,19 +659,21 @@ function DelegateForm({ delegate, onChange, onProvinceChange, error }) {
           </div>
         </Section>
       </form>
-    </main>
+    </div>
   );
 }
 
 function Section({ title, description, no, children }) {
   return (
-    <section className="border-b border-[var(--line)] pb-7 last:border-b-0 last:pb-0">
-      <div className="mb-5 flex items-end justify-between gap-3">
+    <section className="border-b border-[var(--line)] pb-8 last:border-b-0 last:pb-0">
+      <div className="mb-6 flex items-end justify-between gap-3">
         <div>
           <p className="eyebrow">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--muted-2)]">{description}</p>
+          <p className="mt-1.5 text-[13px] leading-5 text-[var(--muted-2)]">{description}</p>
         </div>
-        <span className="font-display text-3xl leading-none text-[rgba(224,178,90,0.30)]">{no}</span>
+        <span className="font-mono text-xs font-semibold tracking-[0.18em] text-[var(--muted-2)]">
+          STEP {no}
+        </span>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </section>
@@ -603,7 +695,7 @@ function Field({ label, required, hint, children }) {
 function FormSidebar() {
   return (
     <aside className="hidden space-y-4 lg:block">
-      <div className="surface-soft p-5">
+      <div className="surface-soft p-5 sm:p-6">
         <p className="eyebrow">What to have ready</p>
         <ul className="mt-3 space-y-2.5 text-sm leading-6 text-[var(--muted)]">
           <li className="flex gap-2.5">
@@ -624,14 +716,14 @@ function FormSidebar() {
           </li>
         </ul>
       </div>
-      <div className="surface-soft p-5">
+      <div className="surface-soft p-5 sm:p-6">
         <p className="eyebrow">About the host</p>
         <p className="display-heading mt-2 text-lg">{DNDN_FACTS.name}</p>
         <p className="mt-1.5 text-xs leading-5 text-[var(--muted)]">
           {DNDN_FACTS.province}. Host Bishop: {DNDN_FACTS.hostBishop}. Cathedral: {DNDN_FACTS.cathedral}.
         </p>
       </div>
-      <div className="surface-soft p-5">
+      <div className="surface-soft p-5 sm:p-6">
         <div className="flex items-start gap-2.5">
           <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--warn)]" />
           <div>
@@ -650,55 +742,66 @@ function FormSidebar() {
 function PreviewView({ delegates, onEdit, onBack, onSubmit, loading, error }) {
   return (
     <div className="page-shell relative pb-32">
-      <div className="shell-container relative z-10 max-w-5xl py-8 sm:py-10">
-        <button type="button" onClick={onBack} className="ghost-link">
-          <ArrowLeft className="h-4 w-4" /> Back to form
-        </button>
-        <p className="eyebrow mt-5">Step 2 of 2</p>
-        <h1 className="display-heading mt-2 text-3xl leading-[1.02] text-[var(--text)] sm:text-4xl lg:text-5xl">
-          Review your <span className="display-yellow">delegation.</span>
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-          {delegates.length === 1
-            ? 'One delegate. Confirm the details below, then submit.'
-            : `${delegates.length} delegates in this batch. Confirm each card, then submit them all under one reference.`}
-        </p>
-
-        {error ? (
-          <div className="mt-5 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="mt-7 grid gap-4">
-          {delegates.map((d, i) => (
-            <PreviewCard key={i} index={i} delegate={d} onEdit={() => onEdit(i)} />
-          ))}
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
+            <div className="hidden sm:block">
+              <p className="eyebrow">Episcopal Consultation</p>
+              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
+            </div>
+          </Link>
+          <Link to="/dashboard" className="hidden text-[13px] font-semibold text-[var(--muted)] transition hover:text-[var(--accent)] sm:inline-flex">
+            Look up status
+          </Link>
         </div>
-      </div>
+      </header>
+
+      <main className="relative z-10 pt-28 sm:pt-32">
+        <div className="shell-container max-w-5xl">
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <Ornament />
+            <p className="eyebrow mt-7">Step 2 of 2</p>
+            <h1 className="display-heading mt-3 text-[2.25rem] leading-[0.95] sm:text-[4rem]">
+              Review your <span className="display-accent">delegation.</span>
+            </h1>
+            <p className="mt-4 max-w-md text-[15px] leading-7 text-[var(--muted)]">
+              {delegates.length === 1
+                ? 'One delegate. Confirm the details below, then submit.'
+                : `${delegates.length} delegates in this batch. Confirm each card, then submit them all under one reference.`}
+            </p>
+          </div>
+
+          {error ? (
+            <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(229,119,135,0.32)] bg-[rgba(229,119,135,0.10)] p-4 text-sm text-[var(--err)]">
+              <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          ) : null}
+
+          <div className="mt-10 grid gap-4">
+            {delegates.map((d, i) => (
+              <PreviewCard key={i} index={i} delegate={d} onEdit={() => onEdit(i)} />
+            ))}
+          </div>
+
+          <div className="mt-8 hidden items-center justify-end gap-3 lg:flex">
+            <button type="button" onClick={onBack} className="secondary-button">Edit</button>
+            <button type="button" onClick={onSubmit} disabled={loading} className="primary-button">
+              {loading ? 'Submitting…' : 'Submit registration'}
+              {!loading ? <CheckCircle2 className="h-4 w-4" /> : null}
+            </button>
+          </div>
+        </div>
+      </main>
 
       <div className="mobile-action-bar">
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           <button type="button" onClick={onBack} className="secondary-button flex-1 px-3 py-2.5 text-xs sm:text-sm">
             Edit
           </button>
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={loading}
-            className="primary-button flex-1 px-3 py-2.5 text-xs sm:text-sm"
-          >
+          <button type="button" onClick={onSubmit} disabled={loading} className="primary-button flex-1 px-3 py-2.5 text-xs sm:text-sm">
             {loading ? 'Submitting…' : 'Submit'}
-          </button>
-        </div>
-      </div>
-
-      <div className="shell-container relative z-10 mt-8 hidden lg:block">
-        <div className="flex items-center justify-end gap-3">
-          <button type="button" onClick={onBack} className="secondary-button">Edit</button>
-          <button type="button" onClick={onSubmit} disabled={loading} className="primary-button">
-            {loading ? 'Submitting…' : 'Submit registration'}
-            {!loading ? <CheckCircle2 className="h-4 w-4" /> : null}
           </button>
         </div>
       </div>
@@ -707,12 +810,24 @@ function PreviewView({ delegates, onEdit, onBack, onSubmit, loading, error }) {
 }
 
 function PreviewCard({ delegate, index, onEdit }) {
+  /* Honorific — "Other (specify)" resolves to the typed-in text. */
+  const titleValue =
+    delegate.title === HONORIFIC_OTHER ? delegate.titleOther || '—' : delegate.title || '—';
+
+  /* Diocese display — province cascade. */
+  const dioceseValue =
+    delegate.province === PROVINCE_OTHER
+      ? delegate.body === HONORIFIC_OTHER
+        ? delegate.dioceseOther || '—'
+        : delegate.body || '—'
+      : delegate.diocese || '—';
+
   const rows = [
-    ['Title', delegate.title || '—'],
+    ['Honorific', titleValue],
     ['Name', [delegate.firstName, delegate.lastName].filter(Boolean).join(' ') || '—'],
     ['Position', delegate.position || '—'],
     ['Province', delegate.province || '—'],
-    ['Diocese', delegate.province === 'Other (specify)' ? delegate.dioceseOther || '—' : delegate.diocese || '—'],
+    ['Diocese / Body', dioceseValue],
     ['WhatsApp', delegate.whatsappNumber || '—'],
     ['Email', delegate.emailAddress || '—'],
     ['Date of arrival', delegate.dateOfArrival || '—'],
@@ -736,7 +851,7 @@ function PreviewCard({ delegate, index, onEdit }) {
           </div>
           <div>
             <p className="eyebrow">Delegate {index + 1}</p>
-            <h2 className="display-heading mt-1 text-2xl text-[var(--text)]">
+            <h2 className="display-heading mt-1 text-2xl text-[var(--text-bright)]">
               {composeFullName(delegate) || 'Unnamed delegate'}
             </h2>
             <p className="text-sm text-[var(--muted)]">{delegate.position || '—'}</p>
@@ -750,15 +865,15 @@ function PreviewCard({ delegate, index, onEdit }) {
         {rows.map(([k, v]) => (
           <div key={k} className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-3.5">
             <dt className="eyebrow">{k}</dt>
-            <dd className="mt-1 text-sm text-[var(--text)]">{v || '—'}</dd>
+            <dd className="mt-1 text-sm text-[var(--text-bright)]">{v || '—'}</dd>
           </div>
         ))}
         {delegate.comingWithDriverEscort === 'Yes' ? (
           <>
-            <Row k="Driver" v={delegate.driverName} />
-            <Row k="Driver phone" v={delegate.driverPhoneNumber} />
-            <Row k="Escort" v={delegate.escortName} />
-            <Row k="Escort phone" v={delegate.escortPhoneNumber} />
+            <PreviewRow k="Driver" v={delegate.driverName} />
+            <PreviewRow k="Driver phone" v={delegate.driverPhoneNumber} />
+            <PreviewRow k="Escort" v={delegate.escortName} />
+            <PreviewRow k="Escort phone" v={delegate.escortPhoneNumber} />
           </>
         ) : null}
       </dl>
@@ -766,11 +881,11 @@ function PreviewCard({ delegate, index, onEdit }) {
   );
 }
 
-function Row({ k, v }) {
+function PreviewRow({ k, v }) {
   return (
     <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] p-3.5">
       <dt className="eyebrow">{k}</dt>
-      <dd className="mt-1 text-sm text-[var(--text)]">{v || '—'}</dd>
+      <dd className="mt-1 text-sm text-[var(--text-bright)]">{v || '—'}</dd>
     </div>
   );
 }
@@ -778,62 +893,80 @@ function Row({ k, v }) {
 function SuccessView({ batch, onAnother }) {
   return (
     <div className="page-shell relative">
-      <div className="shell-container relative z-10 max-w-3xl py-10 sm:py-14">
-        <div className="surface-glass p-6 sm:p-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] px-3.5 py-1.5">
-            <CheckCircle2 className="h-4 w-4 text-[var(--ok)]" />
-            <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--ok)]">
-              {batch.count === 1 ? 'Registration submitted' : `${batch.count} delegates submitted`}
-            </span>
-          </div>
-          <h1 className="display-heading mt-5 text-3xl leading-[1.05] sm:text-4xl">
-            Your registration is in.
-          </h1>
-          {batch.batchId && batch.batchId !== 'SINGLE' ? (
-            <p className="mt-3 font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-              Batch reference: <span className="text-[var(--accent)]">{batch.batchId}</span>
-            </p>
-          ) : null}
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="shell-container flex items-center justify-between gap-3 py-5 sm:py-6">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Diocese of Niger Delta North" className="logo" />
+            <div className="hidden sm:block">
+              <p className="eyebrow">Episcopal Consultation</p>
+              <p className="text-[0.95rem] font-semibold leading-tight text-[var(--text-bright)]">Registration Portal</p>
+            </div>
+          </Link>
+        </div>
+      </header>
 
-          <div className="mt-6 space-y-4 text-[15px] leading-7 text-[var(--muted)]">
-            <p>Your Grace / Your Lordship,</p>
-            <p>
-              Thank you so much for taking the time to share your details for the Church of Nigeria Episcopal Consultation. We
-              truly appreciate your quick response and cooperation. Your information has been received with gratitude and will
-              help us a lot as we prepare for the Consultation.
-            </p>
-            <p>
-              We will share more details soon about accreditation, accommodation, transportation, protocol arrangements, and
-              other logistics.
-            </p>
-            <p>If you need any help or further information, please feel free to reach out to:</p>
-            <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4">
-              <p className="font-semibold text-[var(--text)]">Rev. Canon Gideon Genka</p>
-              <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08060821822</p>
-              <p className="mt-3 font-semibold text-[var(--text)]">Engr. Edwin Amadi</p>
-              <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08036716352</p>
+      <main className="relative z-10 pt-28 sm:pt-32">
+        <div className="shell-container max-w-3xl">
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <Ornament />
+            <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-[rgba(95,185,138,0.32)] bg-[rgba(95,185,138,0.10)] px-4 py-1.5">
+              <CheckCircle2 className="h-4 w-4 text-[var(--ok)]" />
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[var(--ok)]">
+                {batch.count === 1 ? 'Registration submitted' : `${batch.count} delegates submitted`}
+              </span>
             </div>
-            <p>
-              We&apos;re excited to welcome Your Grace/Your Lordship to the {DNDN_FACTS.name}. May the Lord continue to strengthen
-              and bless your ministry.
-            </p>
-            <div className="pt-2">
-              <p>Warmest regards,</p>
-              <p className="mt-1 font-semibold text-[var(--text)]">Episcopal Consultation Planning Committee</p>
-              <p>{DNDN_FACTS.name} (DNDN)</p>
-            </div>
+            <h1 className="display-heading mt-5 text-[2.5rem] leading-[0.95] sm:text-[4.5rem]">
+              Your registration<br /><span className="display-accent">is in.</span>
+            </h1>
+            {batch.batchId && batch.batchId !== 'SINGLE' ? (
+              <p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+                Batch reference: <span className="text-[var(--accent)]">{batch.batchId}</span>
+              </p>
+            ) : null}
           </div>
 
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link to="/dashboard" className="secondary-button justify-center">
-              Look up status
-            </Link>
-            <button type="button" onClick={onAnother} className="primary-button justify-center">
-              <Plus className="h-4 w-4" /> New registration
-            </button>
+          <div className="surface-glass mt-10 p-6 sm:p-10">
+            <div className="space-y-4 text-[15px] leading-7 text-[var(--muted)]">
+              <p>Your Grace / Your Lordship,</p>
+              <p>
+                Thank you so much for taking the time to share your details for the Church of Nigeria Episcopal
+                Consultation. We truly appreciate your quick response and cooperation. Your information has been
+                received with gratitude and will help us a lot as we prepare for the Consultation.
+              </p>
+              <p>
+                We will share more details soon about accreditation, accommodation, transportation, protocol
+                arrangements, and other logistics.
+              </p>
+              <p>If you need any help or further information, please feel free to reach out to:</p>
+              <div className="rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-4 sm:p-5">
+                <p className="font-semibold text-[var(--text-bright)]">Rev. Canon Gideon Genka</p>
+                <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08060821822</p>
+                <p className="mt-3 font-semibold text-[var(--text-bright)]">Engr. Edwin Amadi</p>
+                <p className="mt-0.5 font-mono text-sm text-[var(--muted)]">08036716352</p>
+              </div>
+              <p>
+                We&apos;re excited to welcome Your Grace/Your Lordship to the {DNDN_FACTS.name}. May the Lord
+                continue to strengthen and bless your ministry.
+              </p>
+              <div className="pt-2">
+                <p>Warmest regards,</p>
+                <p className="mt-1 font-semibold text-[var(--text-bright)]">Episcopal Consultation Planning Committee</p>
+                <p>{DNDN_FACTS.name} (DNDN)</p>
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link to="/dashboard" className="secondary-button justify-center">
+                Look up status
+              </Link>
+              <button type="button" onClick={onAnother} className="primary-button justify-center">
+                <Plus className="h-4 w-4" /> New registration
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
       <PublicFooter />
     </div>
   );
