@@ -17,6 +17,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { deleteRegistration, getRegistrations, updateRegistrationStatus } from '../db';
+import { sendDelegateEmail } from '../lib/email';
 import { PROGRAMME_DATES, summarizeRegistrations } from '../lib/registrations';
 import useDocumentTitle from '../lib/useDocumentTitle';
 
@@ -117,8 +118,13 @@ export default function AdminLayout() {
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateRegistrationStatus(id, newStatus);
+      const target = registrations.find((item) => item.id === id);
       setRegistrations((current) => current.map((item) => (item.id === id ? { ...item, status: newStatus } : item)));
       setFeedback(`Status updated to ${newStatus}.`, 'success');
+      /* Notify the delegate on a decisive outcome. Best-effort — never
+         blocks or reverts the status change. */
+      if (target && newStatus === 'Approved') void sendDelegateEmail({ type: 'approved', registration: target });
+      if (target && newStatus === 'Declined') void sendDelegateEmail({ type: 'declined', registration: target });
     } catch (error) {
       console.error(error);
       setFeedback('Could not update status.', 'error');

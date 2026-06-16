@@ -1,7 +1,9 @@
 import {
   collection,
   addDoc,
+  getDoc,
   getDocs,
+  setDoc,
   updateDoc,
   doc,
   query,
@@ -17,6 +19,31 @@ import { db } from './firebase';
 export const COLLECTION_NAME = 'episcopal_consultation_registrations';
 export const ACCOMMODATIONS_COLLECTION = 'episcopal_consultation_accommodations';
 export const TRANSPORTS_COLLECTION = 'episcopal_consultation_transports';
+export const SETTINGS_COLLECTION = 'episcopal_consultation_settings';
+export const SETTINGS_DOC_ID = 'app_config';
+
+const DEFAULT_SETTINGS = { autoApproveEnabled: false };
+
+/* App-wide settings live in a single document. Missing fields fall back
+   to DEFAULT_SETTINGS so the rest of the app never has to null-check. */
+export const getSettings = async () => {
+  try {
+    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID));
+    return snap.exists() ? { ...DEFAULT_SETTINGS, ...snap.data() } : { ...DEFAULT_SETTINGS };
+  } catch (e) {
+    console.error('Error getting settings: ', e);
+    return { ...DEFAULT_SETTINGS };
+  }
+};
+
+export const updateSettings = async (patch) => {
+  try {
+    await setDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), patch, { merge: true });
+  } catch (e) {
+    console.error('Error updating settings: ', e);
+    throw e;
+  }
+};
 
 /* Defensive trim — Firebase rejects undefined/null field values, so
    any non-string input (including the absent fields on a fresh form
@@ -85,7 +112,11 @@ const buildPayload = (data) => {
 
 export const saveRegistration = async (data) => {
   try {
+    /* When the secretariat has enabled auto-approval, new submissions
+       skip the Pending queue and land as Approved straight away. */
+    const { autoApproveEnabled } = await getSettings();
     const payload = buildPayload(data);
+    if (autoApproveEnabled) payload.status = 'Approved';
     const docRef = await addDoc(collection(db, COLLECTION_NAME), payload);
     return { id: docRef.id, ...payload };
   } catch (e) {
@@ -100,10 +131,12 @@ export const saveRegistrationBatch = async (delegates) => {
   }
   const batchId = `BATCH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   try {
+    const { autoApproveEnabled } = await getSettings();
     const batch = writeBatch(db);
     const results = [];
     delegates.forEach((delegate) => {
       const payload = { ...buildPayload(delegate), batchId };
+      if (autoApproveEnabled) payload.status = 'Approved';
       const docRef = doc(collection(db, COLLECTION_NAME));
       batch.set(docRef, payload);
       results.push({ id: docRef.id, ...payload });
