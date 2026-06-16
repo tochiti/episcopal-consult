@@ -79,6 +79,8 @@ const buildPayload = (data) => {
     whatsappNumber: trim(data.whatsappNumber),
     emailAddress: trim(data.emailAddress),
     emailAddressNormalized: trim(data.emailAddress || '').toLowerCase(),
+    chaplainName: trim(data.chaplainName),
+    chaplainPhoneNumber: trim(data.chaplainPhoneNumber),
     dateOfArrival: trim(data.dateOfArrival),
     modeOfTravel: trim(data.modeOfTravel),
     requireInternalTransport: data.requireInternalTransport || 'No',

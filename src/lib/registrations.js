@@ -3,7 +3,8 @@
    Field model on each delegate document:
      - Identity:        title, titleOther, firstName, lastName, position
      - Geography:       province, diocese, body, dioceseOther
-     - Contact:         whatsappNumber, emailAddress, emailAddressNormalized
+     - Contact:         whatsappNumber, emailAddress, emailAddressNormalized,
+                        chaplainName, chaplainPhoneNumber
      - Travel:          dateOfArrival, modeOfTravel, requireInternalTransport,
                         comingWithDriverEscort, driverName, driverPhoneNumber,
                         escortName, escortPhoneNumber
@@ -117,6 +118,8 @@ export const REGISTRATION_EXPORT_COLUMNS = [
   { key: 'diocese', label: 'Diocese', format: (row) => composeDiocese(row) },
   { key: 'whatsappNumber', label: 'WhatsApp Number' },
   { key: 'emailAddress', label: 'Email Address' },
+  { key: 'chaplainName', label: 'Chaplain Name' },
+  { key: 'chaplainPhoneNumber', label: 'Chaplain Phone' },
   { key: 'dateOfArrival', label: 'Date of Arrival', format: (row) => formatDate(row.dateOfArrival) },
   { key: 'modeOfTravel', label: 'Mode of Travel' },
   { key: 'requireInternalTransport', label: 'Internal Transport' },
