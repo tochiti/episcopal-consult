@@ -47,6 +47,8 @@ const emptyDelegate = () => ({
   /* Contact */
   whatsappNumber: '',
   emailAddress: '',
+  chaplainName: '',
+  chaplainPhoneNumber: '',
   /* Travel */
   dateOfArrival: '',
   modeOfTravel: '',
@@ -553,6 +555,24 @@ function DelegateForm({ delegate, onChange, onProvinceChange, onTitleChange, onB
               className="field-input"
             />
           </Field>
+          <Field label="Chaplain's Name" hint="Optional — the chaplain accompanying the delegate.">
+            <input
+              type="text"
+              value={delegate.chaplainName}
+              onChange={handle('chaplainName')}
+              placeholder="Full name"
+              className="field-input"
+            />
+          </Field>
+          <Field label="Chaplain's Phone Number">
+            <input
+              type="tel"
+              value={delegate.chaplainPhoneNumber}
+              onChange={handle('chaplainPhoneNumber')}
+              placeholder="+234…"
+              className="field-input"
+            />
+          </Field>
         </Section>
 
         <Section title="Travel" no="04" description="Arrival information used to schedule airport pickups and protocol.">
@@ -847,6 +867,12 @@ function PreviewCard({ delegate, index, onEdit }) {
             <PreviewRow k="Driver phone" v={delegate.driverPhoneNumber} />
             <PreviewRow k="Escort" v={delegate.escortName} />
             <PreviewRow k="Escort phone" v={delegate.escortPhoneNumber} />
+          </>
+        ) : null}
+        {delegate.chaplainName || delegate.chaplainPhoneNumber ? (
+          <>
+            <PreviewRow k="Chaplain" v={delegate.chaplainName} />
+            <PreviewRow k="Chaplain phone" v={delegate.chaplainPhoneNumber} />
           </>
         ) : null}
       </dl>

@@ -110,6 +110,8 @@ export default function AdminRegistrationDetail() {
             items={[
               { label: 'Email', value: registration.emailAddress, icon: Mail, mono: true, action: registration.emailAddress ? 'email' : null },
               { label: 'WhatsApp', value: registration.whatsappNumber, icon: Phone, mono: true, action: 'phone' },
+              { label: "Chaplain's name", value: registration.chaplainName, icon: Crown },
+              { label: "Chaplain's phone", value: registration.chaplainPhoneNumber, icon: Phone, mono: true, action: registration.chaplainPhoneNumber ? 'phone' : null },
             ]}
           />
           <DetailSection
