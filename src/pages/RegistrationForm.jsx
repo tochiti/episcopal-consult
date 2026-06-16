@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { saveRegistration, saveRegistrationBatch } from '../db';
+import { sendDelegateEmails } from '../lib/email';
 import PublicLayout from '../components/PublicLayout';
 import PassportUpload from '../components/PassportUpload';
 import { composeFullName, DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
@@ -196,13 +197,23 @@ export default function RegistrationForm() {
     setLoading(true);
     setError('');
     try {
+      let saved;
       if (delegates.length === 1) {
         const result = await saveRegistration(delegates[0]);
-        setSubmittedBatch({ batchId: 'SINGLE', count: 1, registrations: [result] });
+        saved = [result];
+        setSubmittedBatch({ batchId: 'SINGLE', count: 1, registrations: saved });
       } else {
         const result = await saveRegistrationBatch(delegates);
-        setSubmittedBatch({ batchId: result.batchId, count: result.registrations.length, registrations: result.registrations });
+        saved = result.registrations;
+        setSubmittedBatch({ batchId: result.batchId, count: result.registrations.length, registrations: saved });
       }
+      /* Auto-approved records get an approval email; everyone else gets a
+         "registration received" confirmation. Email is best-effort and
+         never blocks the success view. */
+      const approved = saved.filter((r) => r.status === 'Approved');
+      const pending = saved.filter((r) => r.status !== 'Approved');
+      void sendDelegateEmails('approved', approved);
+      void sendDelegateEmails('confirmation', pending);
       setView('success');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (submitError) {
@@ -940,7 +951,7 @@ function SuccessView({ batch, onAnother }) {
                 />
                 <ContactCard
                   name="Engr. Edwin Amadi"
-                  role="Logistics"
+                  role="Registration"
                   phone="08036716352"
                   dial="tel:+2348036716352"
                   whatsapp="https://wa.me/2348036716352"

@@ -21,7 +21,7 @@
 
 export const DNDN_FACTS = {
   name: 'Diocese of Niger Delta North',
-  province: 'Niger Delta Province, Church of Nigeria (Anglican Communion)',
+  province: 'Niger Delta Province, Church of Nigeria (Global Anglican Communion)',
   hostBishop: 'The Rt Revd Wisdom Budu Ihunwo',
   cathedral: "St Paul's Cathedral, Diobu, Port Harcourt",
   established: '1996',

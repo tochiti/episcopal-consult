@@ -25,7 +25,7 @@ export default function PublicFooter() {
           <Calendar className="h-3 w-3" />
           {PROGRAMME_DATES.display}
         </p>
-        <p className="font-mono uppercase tracking-[0.24em]">Church of Nigeria (Anglican Communion)</p>
+        <p className="font-mono uppercase tracking-[0.24em]">Church of Nigeria (Global Anglican Communion)</p>
       </div>
     </footer>
   );

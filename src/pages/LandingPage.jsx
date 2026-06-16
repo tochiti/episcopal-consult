@@ -49,7 +49,7 @@ const contacts = [
   },
   {
     name: 'Engr. Edwin Amadi',
-    role: 'Logistics',
+    role: 'Registration',
     phone: '08036716352',
     dial: 'tel:+2348036716352',
     whatsapp: 'https://wa.me/2348036716352',
@@ -73,7 +73,7 @@ function Ornament({ tone = 'gold' }) {
 export default function LandingPage() {
   useDocumentTitle(
     'Episcopal Consultation 2026 — DNDN Registration Portal',
-    'Registration portal for the Episcopal Consultation of the Church of Nigeria (Anglican Communion), hosted by the Diocese of Niger Delta North, 13–17 July 2026 in Port Harcourt.'
+    'Registration portal for the Episcopal Consultation of the Church of Nigeria (Global Anglican Communion), hosted by the Diocese of Niger Delta North, 13–17 July 2026 in Port Harcourt.'
   );
 
   return (
@@ -139,7 +139,7 @@ export default function LandingPage() {
 
             <p className="mt-6 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
               Registration portal for delegates attending the Episcopal Consultation of the Church of Nigeria
-              (Anglican Communion). Submit your details and the host diocese will plan around you.
+              (Global Anglican Communion). Submit your details and the host diocese will plan around you.
             </p>
 
             <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">

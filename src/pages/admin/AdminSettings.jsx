@@ -1,11 +1,60 @@
-import { LogOut, ShieldCheck, Download, Users, BedDouble, Car, Crown, Award, FileText, Database, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LogOut, ShieldCheck, Download, Users, BedDouble, Car, Crown, Award, FileText, Database, Lock, Zap } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import AdminPageHeader from '../../components/AdminPageHeader';
+import { getSettings, updateSettings } from '../../db';
 
 export default function AdminSettings() {
-  const { handleSignOut, registrations = [] } = useOutletContext();
+  const { handleSignOut, handleStatusChange, registrations = [] } = useOutletContext();
   const total = registrations.length;
   const approved = registrations.filter((r) => (r.status || 'Pending') === 'Approved').length;
+
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [settingBusy, setSettingBusy] = useState(false);
+  const [autoMessage, setAutoMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    getSettings()
+      .then((settings) => {
+        if (active) setAutoApprove(Boolean(settings.autoApproveEnabled));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleToggleAutoApprove = async () => {
+    if (settingBusy) return;
+    const next = !autoApprove;
+    setSettingBusy(true);
+    setAutoMessage('');
+    try {
+      await updateSettings({ autoApproveEnabled: next });
+      setAutoApprove(next);
+      if (next) {
+        /* Clear the existing backlog: approve every pending record. Reusing
+           handleStatusChange keeps state + approval emails consistent. */
+        const pending = registrations.filter((r) => (r.status || 'Pending') === 'Pending');
+        for (const record of pending) {
+          await handleStatusChange(record.id, 'Approved');
+        }
+        setAutoMessage(
+          pending.length
+            ? `Auto-approval on. ${pending.length} pending registration${pending.length === 1 ? '' : 's'} approved.`
+            : 'Auto-approval on. New registrations will be approved automatically.'
+        );
+      } else {
+        setAutoMessage('Auto-approval off. New registrations will await manual review.');
+      }
+    } catch (error) {
+      console.error(error);
+      setAutoMessage('Could not update the auto-approval setting.');
+    } finally {
+      setSettingBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -61,6 +110,50 @@ export default function AdminSettings() {
             client-side — no third-party access to delegate data.
           </p>
         </div>
+      </section>
+
+      {/* Automation card */}
+      <section className="surface-glass p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--line-strong)] bg-[rgba(224,178,90,0.10)] text-[var(--accent)]">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div className="max-w-xl">
+              <p className="eyebrow">Automation</p>
+              <p className="mt-0.5 text-[15px] font-semibold text-[var(--text-bright)]">Automatic approval</p>
+              <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+                When enabled, new delegate registrations are approved automatically — no manual review needed — and
+                each delegate is emailed their approval. Turning this on now also approves every registration still
+                pending. Leave it off to review submissions yourself.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoApprove}
+            aria-label="Toggle automatic approval"
+            onClick={handleToggleAutoApprove}
+            disabled={settingBusy}
+            className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full border transition disabled:opacity-50 ${
+              autoApprove
+                ? 'border-[var(--accent)] bg-[var(--accent)]'
+                : 'border-[var(--line-strong)] bg-[rgba(12,6,8,0.6)]'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-[#1a0c10] transition ${
+                autoApprove ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+        {autoMessage ? (
+          <p className="mt-4 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.5)] p-3 text-xs text-[var(--muted)]">
+            {autoMessage}
+          </p>
+        ) : null}
       </section>
 
       {/* Operational systems reference */}
