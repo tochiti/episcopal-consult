@@ -22,7 +22,7 @@ export const TRANSPORTS_COLLECTION = 'episcopal_consultation_transports';
 export const SETTINGS_COLLECTION = 'episcopal_consultation_settings';
 export const SETTINGS_DOC_ID = 'app_config';
 
-const DEFAULT_SETTINGS = { autoApproveEnabled: false };
+const DEFAULT_SETTINGS = { autoApproveEnabled: false, notificationEmails: [] };
 
 /* App-wide settings live in a single document. Missing fields fall back
    to DEFAULT_SETTINGS so the rest of the app never has to null-check. */

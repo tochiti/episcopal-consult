@@ -15,8 +15,8 @@ import {
   X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { saveRegistration, saveRegistrationBatch } from '../db';
-import { sendDelegateEmails } from '../lib/email';
+import { getSettings, saveRegistration, saveRegistrationBatch } from '../db';
+import { sendDelegateEmails, sendNewRegistrationNotification } from '../lib/email';
 import PublicLayout from '../components/PublicLayout';
 import PassportUpload from '../components/PassportUpload';
 import { composeFullName, DNDN_FACTS, PROGRAMME_DATES } from '../lib/registrations';
@@ -216,6 +216,12 @@ export default function RegistrationForm() {
       const pending = saved.filter((r) => r.status !== 'Approved');
       void sendDelegateEmails('approved', approved);
       void sendDelegateEmails('confirmation', pending);
+      /* Notify the secretariat's configured watch addresses. Use the first
+         saved record as the representative delegate for the notification
+         (batch submissions send one consolidated alert). */
+      getSettings().then(({ notificationEmails }) => {
+        void sendNewRegistrationNotification(saved[0], notificationEmails);
+      }).catch(() => {});
       setView('success');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (submitError) {

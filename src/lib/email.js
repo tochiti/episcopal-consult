@@ -43,3 +43,39 @@ export const sendDelegateEmail = async ({ type, registration }) => {
 /** Fire emails for many delegates without letting one failure abort the rest. */
 export const sendDelegateEmails = async (type, registrations = []) =>
   Promise.all(registrations.map((registration) => sendDelegateEmail({ type, registration })));
+
+/**
+ * Notify up to 5 secretariat addresses whenever a new registration lands.
+ * Sends a single request with all addresses as the `to` array — one email
+ * per Resend call, not one per address. Best-effort; never throws.
+ *
+ * @param {Object}   registration      The saved registration record.
+ * @param {string[]} notificationEmails Addresses stored in app settings.
+ */
+export const sendNewRegistrationNotification = async (registration, notificationEmails = []) => {
+  const addresses = (notificationEmails || []).filter((e) => typeof e === 'string' && e.trim());
+  if (!addresses.length) return { ok: false, skipped: true };
+
+  try {
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'new-registration',
+        to: addresses,
+        name: buildName(registration),
+        diocese: registration.diocese || '',
+        province: registration.province || '',
+      }),
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      console.warn(`Registration notification not sent: ${response.status} ${detail}`);
+      return { ok: false };
+    }
+    return { ok: true };
+  } catch (error) {
+    console.warn('Registration notification failed:', error);
+    return { ok: false };
+  }
+};

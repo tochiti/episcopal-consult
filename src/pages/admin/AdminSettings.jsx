@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, ShieldCheck, Download, Users, BedDouble, Car, Crown, Award, FileText, Database, Lock, Zap } from 'lucide-react';
+import { LogOut, ShieldCheck, Download, Users, BedDouble, Car, Crown, Award, FileText, Database, Lock, Zap, Bell, X, Plus } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import AdminPageHeader from '../../components/AdminPageHeader';
 import { getSettings, updateSettings } from '../../db';
@@ -13,17 +13,51 @@ export default function AdminSettings() {
   const [settingBusy, setSettingBusy] = useState(false);
   const [autoMessage, setAutoMessage] = useState('');
 
+  const [notifEmails, setNotifEmails] = useState([]);
+  const [notifInput, setNotifInput] = useState('');
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifMessage, setNotifMessage] = useState('');
+
   useEffect(() => {
     let active = true;
     getSettings()
       .then((settings) => {
-        if (active) setAutoApprove(Boolean(settings.autoApproveEnabled));
+        if (active) {
+          setAutoApprove(Boolean(settings.autoApproveEnabled));
+          setNotifEmails(Array.isArray(settings.notificationEmails) ? settings.notificationEmails : []);
+        }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
+
+  const handleAddNotifEmail = () => {
+    const email = notifInput.trim().toLowerCase();
+    if (!email || !email.includes('@') || notifEmails.length >= 5 || notifEmails.includes(email)) return;
+    setNotifEmails((prev) => [...prev, email]);
+    setNotifInput('');
+  };
+
+  const handleRemoveNotifEmail = (email) => {
+    setNotifEmails((prev) => prev.filter((e) => e !== email));
+  };
+
+  const handleSaveNotifEmails = async () => {
+    if (notifBusy) return;
+    setNotifBusy(true);
+    setNotifMessage('');
+    try {
+      await updateSettings({ notificationEmails: notifEmails });
+      setNotifMessage('Notification addresses saved.');
+    } catch (error) {
+      console.error(error);
+      setNotifMessage('Could not save notification addresses.');
+    } finally {
+      setNotifBusy(false);
+    }
+  };
 
   const handleToggleAutoApprove = async () => {
     if (settingBusy) return;
@@ -154,6 +188,86 @@ export default function AdminSettings() {
             {autoMessage}
           </p>
         ) : null}
+      </section>
+
+      {/* Notification emails card */}
+      <section className="surface-glass p-6 sm:p-8">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--line-strong)] bg-[rgba(224,178,90,0.10)] text-[var(--accent)]">
+            <Bell className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="eyebrow">Notifications</p>
+            <p className="mt-0.5 text-[15px] font-semibold text-[var(--text-bright)]">Registration alerts</p>
+            <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+              Add up to 5 email addresses that receive an alert whenever a delegate completes the registration form.
+              Useful for keeping the planning team informed in real time without logging into the console.
+            </p>
+
+            {/* Current addresses */}
+            {notifEmails.length > 0 ? (
+              <ul className="mt-4 space-y-2">
+                {notifEmails.map((email) => (
+                  <li
+                    key={email}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[rgba(12,6,8,0.4)] px-4 py-2.5"
+                  >
+                    <span className="font-mono text-xs text-[var(--text-bright)] truncate">{email}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveNotifEmail(email)}
+                      aria-label={`Remove ${email}`}
+                      className="flex-shrink-0 text-[var(--muted-2)] hover:text-[var(--err)] transition"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-xs text-[var(--muted-2)]">No notification addresses added yet.</p>
+            )}
+
+            {/* Add input */}
+            {notifEmails.length < 5 ? (
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="email"
+                  value={notifInput}
+                  onChange={(e) => setNotifInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNotifEmail(); } }}
+                  placeholder="address@domain.org"
+                  className="field-input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNotifEmail}
+                  disabled={!notifInput.trim() || notifEmails.length >= 5}
+                  className="secondary-button flex-shrink-0 disabled:opacity-40"
+                >
+                  <Plus className="h-4 w-4" /> Add
+                </button>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-[var(--muted-2)]">Maximum of 5 addresses reached.</p>
+            )}
+
+            {/* Save */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleSaveNotifEmails}
+                disabled={notifBusy}
+                className="primary-button disabled:opacity-50"
+              >
+                {notifBusy ? 'Saving…' : 'Save addresses'}
+              </button>
+              {notifMessage ? (
+                <span className="text-xs text-[var(--muted)]">{notifMessage}</span>
+              ) : null}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Operational systems reference */}
