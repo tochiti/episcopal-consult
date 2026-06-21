@@ -10,8 +10,9 @@ const EVENT_DATES = '13–17 July 2026';
 const HOST = 'Diocese of Niger Delta North';
 
 /* Returns { subject, intro, body } for each notification type. */
-function template(type, name) {
+function template(type, name, { diocese, province } = {}) {
   const greeting = name ? `Dear ${name},` : 'Dear Delegate,';
+  const location = [diocese, province].filter(Boolean).join(', ');
   switch (type) {
     case 'approved':
       return {
@@ -24,6 +25,18 @@ function template(type, name) {
         subject: `Update on your registration — ${EVENT_LABEL}`,
         intro: 'Registration update',
         body: `${greeting}</p><p>Thank you for your interest in the ${EVENT_LABEL}. After review, we are unable to confirm your registration at this time.</p><p>If you believe this is in error, please reply to this message or contact the host secretariat and we will be glad to assist.`,
+      };
+    case 'new-registration':
+      return {
+        subject: `New registration: ${name || 'Delegate'} — ${EVENT_LABEL}`,
+        intro: 'New registration received',
+        body: `A new delegate registration has been submitted for the ${EVENT_LABEL}.</p>
+          <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+            <tr><td style="padding:6px 0;color:#666;font-size:13px;width:120px;">Name</td><td style="padding:6px 0;font-size:13px;font-weight:600;">${name || '—'}</td></tr>
+            ${location ? `<tr><td style="padding:6px 0;color:#666;font-size:13px;">Diocese / Province</td><td style="padding:6px 0;font-size:13px;">${location}</td></tr>` : ''}
+            <tr><td style="padding:6px 0;color:#666;font-size:13px;">Submitted</td><td style="padding:6px 0;font-size:13px;">${new Date().toUTCString()}</td></tr>
+          </table>
+          <p style="margin-top:16px;">Log into the secretariat console to review and approve this registration.`,
       };
     case 'confirmation':
     default:
@@ -64,13 +77,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Email service is not configured.' });
   }
 
-  const { type, to, name } = req.body || {};
-  const validTypes = ['confirmation', 'approved', 'declined'];
-  if (!validTypes.includes(type) || !to || typeof to !== 'string') {
+  const { type, to, name, diocese, province } = req.body || {};
+  const validTypes = ['confirmation', 'approved', 'declined', 'new-registration'];
+  /* `to` may be a single string or an array of strings. */
+  const toValue = Array.isArray(to) ? to.filter((a) => typeof a === 'string' && a.trim()) : to;
+  if (!validTypes.includes(type) || !toValue || (typeof toValue !== 'string' && !toValue.length)) {
     return res.status(400).json({ error: 'Invalid request payload.' });
   }
 
-  const { subject, intro, body } = template(type, (name || '').toString().trim());
+  const { subject, intro, body } = template(
+    type,
+    (name || '').toString().trim(),
+    { diocese: diocese || '', province: province || '' }
+  );
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -79,7 +98,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from, to, subject, html: renderHtml(intro, body) }),
+      body: JSON.stringify({ from, to: toValue, subject, html: renderHtml(intro, body) }),
     });
 
     if (!response.ok) {
